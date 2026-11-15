@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} has no value on the anchor date, so it starts at zero.",
     "MISSING_FX_RATE": "There is no exchange rate for {{currency}}, so those accounts are left out of the total.",
     "NEGATIVE_BALANCE": "{{account}} goes below zero on {{date}}."
+  },
+  "overlay": {
+    "label": "Scenario shown on the chart",
+    "none": "No projection",
+    "window_label": "How far ahead",
+    "window_1Y": "+1 year",
+    "window_3Y": "+3 years",
+    "window_END": "Until the end",
+    "real_vs_projected": "Real vs projected"
   }
 }

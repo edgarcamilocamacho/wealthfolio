@@ -37,6 +37,9 @@ import { useCurrentValuation } from "@/hooks/use-current-account-valuations";
 import { useHoldings } from "@/hooks/use-holdings";
 import { useIsMobileViewport } from "@/hooks/use-platform";
 import { useValuationHistory } from "@/hooks/use-valuation-history";
+import { ScenarioOverlayControl } from "@/features/scenarios/components/scenario-overlay-control";
+import { useScenarioOverlay } from "@/features/scenarios/hooks/use-scenario-overlay";
+import { overlayDeviation } from "@/features/scenarios/lib/scenario-overlay";
 import { canAddHoldings, getActivityRestrictionLevel } from "@/lib/activity-restrictions";
 import {
   AccountPurpose,
@@ -671,6 +674,17 @@ const AccountPage = () => {
       }));
   }, [valuationHistory]);
 
+  const scenarioScope = useMemo(() => ({ type: "account" as const, accountId: id }), [id]);
+  const scenarioOverlay = useScenarioOverlay({
+    scope: scenarioScope,
+    startDate: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+    todayISO,
+  });
+  const scenarioDeviation = useMemo(
+    () => overlayDeviation(chartData, scenarioOverlay.points),
+    [chartData, scenarioOverlay.points],
+  );
+
   const isLoading = isAccountsLoading || isValuationHistoryLoading;
 
   // Callback for IntervalSelector
@@ -1161,6 +1175,7 @@ const AccountPage = () => {
                           data={chartData}
                           isLoading={false}
                           color="var(--investments)"
+                          projection={scenarioOverlay.points}
                           showMarkers={showSnapshotMarkers}
                           snapshotDates={markerDates}
                           markerLabels={markerLabels}
@@ -1183,6 +1198,11 @@ const AccountPage = () => {
                           defaultValue={INITIAL_INTERVAL_CODE}
                         />
                       </div>
+                      <ScenarioOverlayControl
+                        overlay={scenarioOverlay}
+                        deviation={scenarioDeviation}
+                        className="px-4 pb-4"
+                      />
                     </div>
                   </div>
                 </CardContent>

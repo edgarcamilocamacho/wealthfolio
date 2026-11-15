@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} no tiene valor en la fecha ancla, así que empieza en cero.",
     "MISSING_FX_RATE": "No hay tasa de cambio para {{currency}}, así que esas cuentas quedan fuera del total.",
     "NEGATIVE_BALANCE": "{{account}} queda por debajo de cero el {{date}}."
+  },
+  "overlay": {
+    "label": "Escenario en la gráfica",
+    "none": "Sin proyección",
+    "window_label": "Cuánto hacia adelante",
+    "window_1Y": "+1 año",
+    "window_3Y": "+3 años",
+    "window_END": "Hasta el final",
+    "real_vs_projected": "Real vs. proyectado"
   }
 }

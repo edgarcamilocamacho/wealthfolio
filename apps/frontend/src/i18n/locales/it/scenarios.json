@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} non ha valore alla data di ancoraggio, quindi parte da zero.",
     "MISSING_FX_RATE": "Non c'è un tasso di cambio per {{currency}}, quindi quei conti sono esclusi dal totale.",
     "NEGATIVE_BALANCE": "{{account}} scende sotto zero il {{date}}."
+  },
+  "overlay": {
+    "label": "Scenario mostrato nel grafico",
+    "none": "Nessuna proiezione",
+    "window_label": "Orizzonte",
+    "window_1Y": "+1 anno",
+    "window_3Y": "+3 anni",
+    "window_END": "Fino alla fine",
+    "real_vs_projected": "Reale vs proiettato"
   }
 }

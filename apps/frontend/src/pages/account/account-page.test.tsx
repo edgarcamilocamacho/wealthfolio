@@ -24,6 +24,19 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AccountPage from "./account-page";
 
+vi.mock("@/features/scenarios/hooks/use-scenario-overlay", () => ({
+  useScenarioOverlay: () => ({
+    scenarios: [],
+    activeScenario: null,
+    setActiveScenarioId: vi.fn(),
+    futureWindow: "1Y",
+    setFutureWindow: vi.fn(),
+    points: undefined,
+    warnings: [],
+    isLoading: false,
+  }),
+}));
+
 vi.mock("@/adapters", () => ({
   getContributionLimit: vi.fn(),
   getHoldingsList: vi.fn(),

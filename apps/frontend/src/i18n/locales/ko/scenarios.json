@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}}은(는) 기준일에 가치가 없어 0에서 시작합니다.",
     "MISSING_FX_RATE": "{{currency}} 환율이 없어 해당 계좌는 합계에서 제외됩니다.",
     "NEGATIVE_BALANCE": "{{account}}이(가) {{date}}에 0 아래로 내려갑니다."
+  },
+  "overlay": {
+    "label": "차트에 표시할 시나리오",
+    "none": "예측 없음",
+    "window_label": "예측 기간",
+    "window_1Y": "+1년",
+    "window_3Y": "+3년",
+    "window_END": "끝까지",
+    "real_vs_projected": "실제 대비 예측"
   }
 }

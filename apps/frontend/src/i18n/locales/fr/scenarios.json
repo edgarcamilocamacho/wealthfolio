@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} n'a pas de valeur à la date d'ancrage ; il démarre à zéro.",
     "MISSING_FX_RATE": "Aucun taux de change pour {{currency}} ; ces comptes sont exclus du total.",
     "NEGATIVE_BALANCE": "{{account}} passe sous zéro le {{date}}."
+  },
+  "overlay": {
+    "label": "Scénario affiché sur le graphique",
+    "none": "Aucune projection",
+    "window_label": "Horizon",
+    "window_1Y": "+1 an",
+    "window_3Y": "+3 ans",
+    "window_END": "Jusqu'à la fin",
+    "real_vs_projected": "Réel vs projeté"
   }
 }

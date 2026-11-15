@@ -17,6 +17,19 @@ const uiMocks = vi.hoisted(() => ({
   togglePrivacy: vi.fn(),
 }));
 
+vi.mock("@/features/scenarios/hooks/use-scenario-overlay", () => ({
+  useScenarioOverlay: () => ({
+    scenarios: [],
+    activeScenario: null,
+    setActiveScenarioId: vi.fn(),
+    futureWindow: "1Y",
+    setFutureWindow: vi.fn(),
+    points: undefined,
+    warnings: [],
+    isLoading: false,
+  }),
+}));
+
 vi.mock("@/adapters", () => ({
   calculatePerformanceSummary: vi.fn(),
 }));

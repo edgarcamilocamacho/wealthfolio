@@ -16,7 +16,16 @@ import {
   type RechartsActiveDotProps,
   type RechartsMarkerShapeProps,
 } from "./history-chart-marker";
-import { getAutomaticHistoryChartScale, type HistoryChartScaleMode } from "./history-chart-scale";
+import {
+  mergeHistoryWithProjection,
+  type HistoryChartRow,
+  type HistoryProjectionPoint,
+} from "./history-chart-projection";
+import {
+  getAutomaticHistoryChartScale,
+  type HistoryChartScaleDataPoint,
+  type HistoryChartScaleMode,
+} from "./history-chart-scale";
 
 export interface HistoryChartData {
   date: string;
@@ -44,11 +53,13 @@ interface HistoryChartProps {
   minDomainSpanRatio?: number;
   /** The line's colour at or above zero, e.g. `var(--investments)`; below zero it is --loss. */
   color?: string;
+  /** A scenario's projected values, drawn as a dotted line that may run past today. */
+  projection?: HistoryProjectionPoint[];
 }
 
 interface TooltipEntry {
   dataKey?: string | number;
-  payload?: HistoryChartData;
+  payload?: HistoryChartRow;
 }
 
 interface TooltipBaseProps {
@@ -76,44 +87,36 @@ const CustomTooltip = ({
     return null;
   }
 
-  const totalValueData = payload.find(
-    (item): item is TooltipEntry & { dataKey: "totalValue"; payload: HistoryChartData } =>
-      item?.dataKey === "totalValue" && item.payload !== undefined,
-  );
-  const netContributionData = payload.find(
-    (item): item is TooltipEntry & { dataKey: "netContribution"; payload: HistoryChartData } =>
-      item?.dataKey === "netContribution" && item.payload !== undefined,
-  );
-
-  const tvPayload = totalValueData?.payload;
-  const ncPayload = netContributionData?.payload;
-
-  if (!tvPayload) {
+  const row = payload.find((item) => item?.payload !== undefined)?.payload;
+  if (!row) {
     return null;
   }
 
-  const netContributionPayload = ncPayload ?? tvPayload;
-  const tooltipColor = lineColorAt(tvPayload.totalValue, color);
+  const hasTotal = row.totalValue !== undefined;
+  const hasProjection = row.projectedValue !== undefined;
+  const tooltipColor = lineColorAt(row.totalValue ?? row.projectedValue ?? 0, color);
 
   return (
     <div className="bg-popover pointer-events-none grid grid-cols-1 gap-1.5 rounded-md border p-2 shadow-md">
-      <p className="text-muted-foreground text-xs">{formatDate(tvPayload.date, dateFormatting)}</p>
+      <p className="text-muted-foreground text-xs">{formatDate(row.date, dateFormatting)}</p>
 
-      <div className="flex items-center justify-between space-x-2">
-        <div className="flex items-center space-x-1.5">
-          <span className="block h-0.5 w-3" style={{ backgroundColor: tooltipColor }} />
-          <span className="text-muted-foreground text-xs">
-            {t("common:component.total_value_label")}
-          </span>
+      {hasTotal && (
+        <div className="flex items-center justify-between space-x-2">
+          <div className="flex items-center space-x-1.5">
+            <span className="block h-0.5 w-3" style={{ backgroundColor: tooltipColor }} />
+            <span className="text-muted-foreground text-xs">
+              {t("common:component.total_value_label")}
+            </span>
+          </div>
+          <AmountDisplay
+            value={row.totalValue}
+            currency={row.currency}
+            isHidden={isBalanceHidden}
+            className="text-xs font-semibold"
+          />
         </div>
-        <AmountDisplay
-          value={tvPayload.totalValue}
-          currency={tvPayload.currency}
-          isHidden={isBalanceHidden}
-          className="text-xs font-semibold"
-        />
-      </div>
-      {isChartHovered && netContributionPayload && (
+      )}
+      {isChartHovered && row.netContribution !== undefined && (
         <div className="flex items-center justify-between space-x-2">
           <div className="flex items-center space-x-1.5">
             <span
@@ -125,9 +128,40 @@ const CustomTooltip = ({
             </span>
           </div>
           <AmountDisplay
-            value={netContributionPayload.netContribution}
-            currency={netContributionPayload.currency}
+            value={row.netContribution}
+            currency={row.currency}
             isHidden={isBalanceHidden}
+            className="text-xs font-semibold"
+          />
+        </div>
+      )}
+      {hasProjection && (
+        <div className="flex items-center justify-between space-x-2">
+          <div className="flex items-center space-x-1.5">
+            <span
+              className="block h-0 w-3 border-b-2 border-dotted"
+              style={{ borderColor: tooltipColor }}
+            />
+            <span className="text-muted-foreground text-xs">{t("scenarios:chart.projected")}</span>
+          </div>
+          <AmountDisplay
+            value={row.projectedValue}
+            currency={row.currency}
+            isHidden={isBalanceHidden}
+            className="text-xs font-semibold"
+          />
+        </div>
+      )}
+      {hasTotal && hasProjection && (
+        <div className="flex items-center justify-between space-x-2">
+          <span className="text-muted-foreground ps-4.5 text-xs">
+            {t("scenarios:chart.difference")}
+          </span>
+          <AmountDisplay
+            value={(row.totalValue ?? 0) - (row.projectedValue ?? 0)}
+            currency={row.currency}
+            isHidden={isBalanceHidden}
+            colorFormat
             className="text-xs font-semibold"
           />
         </div>
@@ -147,6 +181,7 @@ export function HistoryChart({
   netContributionMaxDomainSpanRatio,
   minDomainSpanRatio,
   color = "var(--gain)",
+  projection,
 }: HistoryChartProps) {
   const { t } = useTranslation();
   const scrubHaptic = useChartScrubHaptic();
@@ -160,16 +195,31 @@ export function HistoryChart({
   const id = useId();
   const fillGradientId = `historyFill-${id}`;
   const strokeGradientId = `historyStroke-${id}`;
+  const rows = useMemo(
+    () => mergeHistoryWithProjection(data, projection, data[0]?.currency ?? ""),
+    [data, projection],
+  );
+  // Projected values widen the domain so the dotted line is never clipped.
+  // Each one stands in for both series, so it cannot widen the net-deposit check.
+  const scaleData = useMemo<HistoryChartScaleDataPoint[]>(() => {
+    if (rows === data) return data;
+    const projected = rows.flatMap((row) =>
+      row.projectedValue === undefined
+        ? []
+        : [{ totalValue: row.projectedValue, netContribution: row.projectedValue }],
+    );
+    return [...data, ...projected];
+  }, [rows, data]);
   const scaleConfig = useMemo(
     () =>
-      getAutomaticHistoryChartScale(data, {
+      getAutomaticHistoryChartScale(scaleData, {
         ...(scaleMode ? { mode: scaleMode } : {}),
         ...(netContributionMaxDomainSpanRatio === undefined
           ? {}
           : { netContributionMaxDomainSpanRatio }),
         ...(minDomainSpanRatio === undefined ? {} : { minDomainSpanRatio }),
       }),
-    [data, scaleMode, netContributionMaxDomainSpanRatio, minDomainSpanRatio],
+    [scaleData, scaleMode, netContributionMaxDomainSpanRatio, minDomainSpanRatio],
   );
 
   const chartConfig = {
@@ -267,7 +317,7 @@ export function HistoryChart({
   return (
     <ChartContainer config={chartConfig} className="h-full w-full" data-no-swipe-drag>
       <AreaChart
-        data={data}
+        data={rows}
         stackOffset="sign"
         style={{
           cursor: showMarkers && isChartHovered && hoveredMarker ? "pointer" : undefined,
@@ -367,7 +417,7 @@ export function HistoryChart({
           type="monotone"
           dataKey="totalValue"
           stroke={`url(#${strokeGradientId})`}
-          activeDot={(props: RechartsActiveDotProps & { payload?: HistoryChartData }) =>
+          activeDot={(props: RechartsActiveDotProps & { payload?: HistoryChartRow }) =>
             showMarkers && props.payload?.date && markerDateSet.has(props.payload.date) ? null : (
               <HistoryChartActiveDot
                 {...props}
@@ -391,6 +441,21 @@ export function HistoryChart({
             fill="transparent"
             strokeDasharray="5 5"
             strokeOpacity={isChartHovered ? 0.8 : 0}
+            style={{ pointerEvents: "none" }}
+          />
+        )}
+        {projection && projection.length > 0 && (
+          <Area
+            isAnimationActive={false}
+            connectNulls={true}
+            type="monotone"
+            dataKey="projectedValue"
+            stroke={color}
+            strokeWidth={1.75}
+            strokeOpacity={0.75}
+            strokeDasharray="2 4"
+            fill="transparent"
+            activeDot={false}
             style={{ pointerEvents: "none" }}
           />
         )}

@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "ليس لـ {{account}} قيمة في تاريخ الارتكاز، لذا يبدأ من الصفر.",
     "MISSING_FX_RATE": "لا يوجد سعر صرف لـ {{currency}}، لذا تُستبعد تلك الحسابات من الإجمالي.",
     "NEGATIVE_BALANCE": "ينخفض {{account}} إلى ما دون الصفر في {{date}}."
+  },
+  "overlay": {
+    "label": "السيناريو المعروض على الرسم",
+    "none": "بلا توقّع",
+    "window_label": "إلى أي مدى",
+    "window_1Y": "+سنة واحدة",
+    "window_3Y": "+3 سنوات",
+    "window_END": "حتى النهاية",
+    "real_vs_projected": "الفعلي مقابل المتوقّع"
   }
 }

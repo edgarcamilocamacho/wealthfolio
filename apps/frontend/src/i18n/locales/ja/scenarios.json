@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} は基準日に評価額がないため、0から始まります。",
     "MISSING_FX_RATE": "{{currency}} の為替レートがないため、該当口座は合計から除外されます。",
     "NEGATIVE_BALANCE": "{{account}} は {{date}} にマイナスになります。"
+  },
+  "overlay": {
+    "label": "グラフに表示するシナリオ",
+    "none": "予測なし",
+    "window_label": "予測期間",
+    "window_1Y": "+1年",
+    "window_3Y": "+3年",
+    "window_END": "終了まで",
+    "real_vs_projected": "実績と予測"
   }
 }

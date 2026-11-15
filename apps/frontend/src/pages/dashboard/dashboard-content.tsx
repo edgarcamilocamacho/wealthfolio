@@ -2,6 +2,9 @@ import { useTranslation } from "react-i18next";
 import { formatZonedDateKey } from "@/features/spending/lib/timezone";
 import { calculatePerformanceSummary } from "@/adapters";
 import { HistoryChart } from "@/components/history-chart";
+import { ScenarioOverlayControl } from "@/features/scenarios/components/scenario-overlay-control";
+import { useScenarioOverlay } from "@/features/scenarios/hooks/use-scenario-overlay";
+import { overlayDeviation } from "@/features/scenarios/lib/scenario-overlay";
 import { useHapticFeedback } from "@/hooks";
 import { useCurrentValuation } from "@/hooks/use-current-account-valuations";
 import { useHoldings } from "@/hooks/use-holdings";
@@ -169,6 +172,12 @@ export function DashboardContent({
     );
   }, [valuationHistory, baseCurrency]);
 
+  const scenarioOverlay = useScenarioOverlay({ scope, startDate, todayISO });
+  const scenarioDeviation = useMemo(
+    () => overlayDeviation(chartData, scenarioOverlay.points),
+    [chartData, scenarioOverlay.points],
+  );
+
   const chartMinDomainSpanRatio = useMemo(
     () => getDashboardChartMinDomainSpanRatio(selectedInterval),
     [selectedInterval],
@@ -283,6 +292,7 @@ export function DashboardContent({
             minDomainSpanRatio={chartMinDomainSpanRatio}
             netContributionMaxDomainSpanRatio={chartNetContributionMaxDomainSpanRatio}
             color="var(--investments)"
+            projection={scenarioOverlay.points}
           />
           {valuationHistory && chartData.length > 0 && (
             <div className="flex w-full justify-center">
@@ -309,6 +319,13 @@ export function DashboardContent({
                 />
               </div>
             </div>
+          )}
+          {valuationHistory && chartData.length > 0 && (
+            <ScenarioOverlayControl
+              overlay={scenarioOverlay}
+              deviation={scenarioDeviation}
+              className="pointer-events-auto relative z-20 mt-2 px-4"
+            />
           )}
         </div>
 

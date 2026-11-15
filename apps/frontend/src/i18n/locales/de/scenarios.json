@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} hat am Ankerdatum keinen Wert und startet daher bei null.",
     "MISSING_FX_RATE": "Für {{currency}} gibt es keinen Wechselkurs; diese Konten fehlen in der Summe.",
     "NEGATIVE_BALANCE": "{{account}} fällt am {{date}} unter null."
+  },
+  "overlay": {
+    "label": "Im Diagramm gezeigtes Szenario",
+    "none": "Keine Projektion",
+    "window_label": "Wie weit voraus",
+    "window_1Y": "+1 Jahr",
+    "window_3Y": "+3 Jahre",
+    "window_END": "Bis zum Ende",
+    "real_vs_projected": "Echt vs. projiziert"
   }
 }

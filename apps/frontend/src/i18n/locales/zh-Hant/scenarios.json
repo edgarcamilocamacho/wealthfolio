@@ -96,5 +96,14 @@
     "NO_ANCHOR_VALUATION": "{{account}} 在錨定日期沒有價值，因此從零開始。",
     "MISSING_FX_RATE": "沒有 {{currency}} 的匯率，這些帳戶不計入總額。",
     "NEGATIVE_BALANCE": "{{account}} 在 {{date}} 低於零。"
+  },
+  "overlay": {
+    "label": "圖表中顯示的情境",
+    "none": "不顯示推估",
+    "window_label": "推估範圍",
+    "window_1Y": "+1 年",
+    "window_3Y": "+3 年",
+    "window_END": "直到結束",
+    "real_vs_projected": "實際與推估"
   }
 }

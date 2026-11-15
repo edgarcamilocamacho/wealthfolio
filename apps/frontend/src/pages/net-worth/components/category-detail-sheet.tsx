@@ -8,6 +8,7 @@ import { CompactAmount } from "./compact-amount";
 import {
   CARD_LABEL,
   CATEGORY_CSS_COLORS,
+  categoryItemDetailPath,
   deriveChange,
   formatChangePercent,
   hadBalanceBefore,
@@ -166,6 +167,7 @@ export function CategoryDetailSheet({
                   </p>
                   <div className="divide-border/40 divide-y">
                     {selected.children.map((child, index) => {
+                      const detailPath = categoryItemDetailPath(selected.key, child.assetId);
                       const content = (
                         <>
                           <div className="flex min-w-0 items-center gap-2.5">
@@ -185,7 +187,7 @@ export function CategoryDetailSheet({
                             <span className="text-foreground/90 text-sm tabular-nums">
                               <CompactAmount value={child.value} currency={currency} />
                             </span>
-                            {child.assetId && (
+                            {detailPath && (
                               <Icons.ChevronRight
                                 className="text-muted-foreground size-4 rtl:rotate-180"
                                 aria-hidden
@@ -195,11 +197,11 @@ export function CategoryDetailSheet({
                         </>
                       );
                       const rowClass = "flex items-center justify-between gap-3 py-2";
-                      // Each item opens its own asset page.
-                      return child.assetId ? (
+                      // Cash items identify accounts; other items identify assets.
+                      return detailPath ? (
                         <Link
                           key={child.assetId}
-                          to={`/holdings/${encodeURIComponent(child.assetId)}`}
+                          to={detailPath}
                           onClick={() => onOpenChange(false)}
                           className={`${rowClass} hover:bg-muted/50 -mx-2 rounded-md px-2 pointer-coarse:min-h-11`}
                         >

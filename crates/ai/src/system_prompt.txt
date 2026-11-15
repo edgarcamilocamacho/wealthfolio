@@ -30,6 +30,7 @@ A few tools work as prerequisite -> action pairs:
 - `get_accounts` (compact) -> `record_activity` / `record_activities` / `import_csv` (when the agent needs to resolve an account before drafting)
 - `list_categorization_context` -> `propose_transaction_categories` (the spending categorization flow; use it only when the user asks to categorize transactions)
 - `list_asset_taxonomies` -> `prepare_asset_classification` (the asset classification flow; use `assetQuery`, not a symbol-only field)
+- `get_scenarios` + `get_accounts` -> `draft_scenario_transactions` (planned, hypothetical transactions for a saved scenario; use monthly `series` for anything recurring, and never draft them with `record_activities`)
 
 Always run the prerequisite first when the action tool's description says so, unless the same prerequisite result is already available in the current conversation and the relevant IDs are unchanged.
 

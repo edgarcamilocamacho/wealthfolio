@@ -30,6 +30,7 @@ pub enum AgentScope {
     BudgetWrite,
     AccountsWrite,
     HoldingsWrite,
+    ScenariosWrite,
 }
 
 impl AgentScope {
@@ -53,6 +54,7 @@ impl AgentScope {
         AgentScope::BudgetWrite,
         AgentScope::AccountsWrite,
         AgentScope::HoldingsWrite,
+        AgentScope::ScenariosWrite,
     ];
 
     /// The read-only scopes — what the `read-only` preset grants. Kept
@@ -89,6 +91,7 @@ impl AgentScope {
             AgentScope::BudgetWrite => "budget:write",
             AgentScope::AccountsWrite => "accounts:write",
             AgentScope::HoldingsWrite => "holdings:write",
+            AgentScope::ScenariosWrite => "scenarios:write",
         }
     }
 
@@ -231,6 +234,14 @@ impl AgentScopeSet {
         if self.contains(AgentScope::AccountsWrite) && !self.contains(AgentScope::AccountsRead) {
             return Some(
                 "accounts:write requires accounts:read (account changes show the stored accounts)"
+                    .to_string(),
+            );
+        }
+        if self.contains(AgentScope::ScenariosWrite)
+            && !self.contains(AgentScope::FinancialPlanningRead)
+        {
+            return Some(
+                "scenarios:write requires financial-planning:read (commits name a stored scenario)"
                     .to_string(),
             );
         }

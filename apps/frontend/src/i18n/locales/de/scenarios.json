@@ -105,5 +105,13 @@
     "window_3Y": "+3 Jahre",
     "window_END": "Bis zum Ende",
     "real_vs_projected": "Echt vs. projiziert"
+  },
+  "assistant": {
+    "title": "Geplante Transaktionen für {{name}}",
+    "description": "Ein Entwurf. Nichts wird gespeichert, bis Sie ihn hinzufügen, und er wird nie zu einer echten Aktivität.",
+    "failed": "Die geplanten Transaktionen konnten nicht vorbereitet werden.",
+    "add": "Zum Szenario hinzufügen ({{count}})",
+    "added": "Zum Szenario hinzugefügt ({{count}})",
+    "open": "Szenario öffnen"
   }
 }

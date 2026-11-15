@@ -45,6 +45,14 @@ pub trait ScenarioServiceTrait: Send + Sync {
     async fn duplicate_scenario(&self, id: &str, name: String) -> Result<Scenario>;
 
     fn get_scenario_transactions(&self, scenario_id: &str) -> Result<Vec<ScenarioTransaction>>;
+    /// Validates a batch and expands its recurrence rules without saving it.
+    /// Returns the rows the batch would create.
+    fn preview_scenario_transactions(
+        &self,
+        scenario_id: &str,
+        request: &SaveScenarioTransactionsRequest,
+    ) -> Result<Vec<NewScenarioTransaction>>;
+
     /// Validates and applies a batch, expanding recurrence rules into rows.
     /// Returns the scenario's transactions after the change.
     async fn save_scenario_transactions(

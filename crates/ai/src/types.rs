@@ -55,6 +55,8 @@ pub const DEFAULT_TOOLS_ALLOWLIST: &[&str] = &[
     "get_spending_report",
     "get_spending_insight",
     "get_event_spending_summaries",
+    "get_scenarios",
+    "draft_scenario_transactions",
 ];
 
 const LEGACY_VISIBLE_DATA_TOOLS: &[&str] = &[

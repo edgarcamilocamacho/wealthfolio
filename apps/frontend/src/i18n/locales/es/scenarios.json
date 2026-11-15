@@ -105,5 +105,13 @@
     "window_3Y": "+3 años",
     "window_END": "Hasta el final",
     "real_vs_projected": "Real vs. proyectado"
+  },
+  "assistant": {
+    "title": "Transacciones planeadas para {{name}}",
+    "description": "Es un borrador. No se guarda nada hasta que lo agregues, y nunca se vuelve una actividad real.",
+    "failed": "No se pudieron preparar las transacciones planeadas.",
+    "add": "Agregar al escenario ({{count}})",
+    "added": "Agregado al escenario ({{count}})",
+    "open": "Abrir escenario"
   }
 }

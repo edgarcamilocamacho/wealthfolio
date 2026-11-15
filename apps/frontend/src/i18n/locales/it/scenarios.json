@@ -105,5 +105,13 @@
     "window_3Y": "+3 anni",
     "window_END": "Fino alla fine",
     "real_vs_projected": "Reale vs proiettato"
+  },
+  "assistant": {
+    "title": "Transazioni pianificate per {{name}}",
+    "description": "Una bozza. Non viene salvato nulla finché non la aggiungi, e non diventa mai un'attività reale.",
+    "failed": "Impossibile preparare le transazioni pianificate.",
+    "add": "Aggiungi allo scenario ({{count}})",
+    "added": "Aggiunto allo scenario ({{count}})",
+    "open": "Apri scenario"
   }
 }

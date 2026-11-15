@@ -105,5 +105,13 @@
     "window_3Y": "+3年",
     "window_END": "終了まで",
     "real_vs_projected": "実績と予測"
+  },
+  "assistant": {
+    "title": "{{name}} の予定の取引",
+    "description": "下書きです。追加するまで保存されず、実際のアクティビティにはなりません。",
+    "failed": "予定の取引を準備できませんでした。",
+    "add": "シナリオに追加（{{count}}）",
+    "added": "シナリオに追加しました（{{count}}）",
+    "open": "シナリオを開く"
   }
 }

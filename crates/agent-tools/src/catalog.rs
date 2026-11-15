@@ -33,6 +33,7 @@ impl AgentToolCatalog {
         let mut tools = crate::tools::v1_read_tools();
         tools.extend(crate::tools::draft_suggest_tools());
         tools.extend(crate::tools::spending_read_tools());
+        tools.extend(crate::tools::scenario_tools());
         Self::new(tools)
     }
 
@@ -52,6 +53,8 @@ impl AgentToolCatalog {
         tools.extend(crate::tools::transaction_category_tools());
         tools.extend(crate::tools::asset_market_data_tools());
         tools.extend(crate::tools::portfolio_setup_tools());
+        tools.extend(crate::tools::scenario_tools());
+        tools.extend(crate::tools::scenario_commit_tools());
         Self::new(tools)
     }
 

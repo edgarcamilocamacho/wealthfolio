@@ -41,6 +41,7 @@ pub mod quote_import;
 pub mod record_activities;
 pub mod record_activity;
 pub mod refresh_market_data;
+pub mod scenarios;
 pub mod spending_budgets;
 pub mod spending_events;
 pub mod spending_import_metadata;
@@ -398,6 +399,21 @@ where
     T: serde::Deserialize<'de>,
 {
     <Option<T> as serde::Deserialize>::deserialize(deserializer)
+}
+
+/// The scenario tools the assistant and MCP share: list scenarios and draft
+/// planned transactions for one. Drafts never save anything.
+pub fn scenario_tools() -> Vec<Arc<dyn AgentTool>> {
+    vec![
+        Arc::new(scenarios::GetScenarios),
+        Arc::new(scenarios::DraftScenarioTransactions),
+    ]
+}
+
+/// The MCP-only tool that saves a reviewed scenario draft. The in-app
+/// assistant saves through its confirmation card instead.
+pub fn scenario_commit_tools() -> Vec<Arc<dyn AgentTool>> {
+    vec![Arc::new(scenarios::CommitScenarioTransactions)]
 }
 
 #[cfg(test)]

@@ -145,8 +145,10 @@ pub struct ScenarioTransactionUpdate {
 }
 
 /// A row ready to insert: the user's fields plus the series it belongs to.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NewScenarioTransaction {
+    #[serde(flatten)]
     pub input: ScenarioTransactionInput,
     pub series_id: Option<String>,
     pub series_label: Option<String>,

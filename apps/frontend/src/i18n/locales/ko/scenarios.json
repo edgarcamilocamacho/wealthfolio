@@ -105,5 +105,13 @@
     "window_3Y": "+3년",
     "window_END": "끝까지",
     "real_vs_projected": "실제 대비 예측"
+  },
+  "assistant": {
+    "title": "{{name}}의 계획된 거래",
+    "description": "초안입니다. 추가하기 전에는 저장되지 않으며 실제 활동이 되지 않습니다.",
+    "failed": "계획된 거래를 준비할 수 없습니다.",
+    "add": "시나리오에 추가 ({{count}})",
+    "added": "시나리오에 추가됨 ({{count}})",
+    "open": "시나리오 열기"
   }
 }

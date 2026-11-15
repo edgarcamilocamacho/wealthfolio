@@ -1521,6 +1521,10 @@
       "holdings_write": {
         "label": "Posiciones: escribir",
         "description": "Guardar instantáneas de posiciones (posiciones y efectivo en una fecha) en cuentas que siguen posiciones, y añadir activos alternativos y pasivos. Requiere el ámbito de posiciones (lectura)."
+      },
+      "scenarios_write": {
+        "label": "Escenarios — escritura",
+        "description": "Agregar transacciones planeadas a escenarios guardados. Nunca se vuelven actividades reales. Requiere el alcance de lectura de planificación financiera."
       }
     },
     "preset": {

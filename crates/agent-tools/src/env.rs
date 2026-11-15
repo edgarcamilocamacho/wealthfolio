@@ -24,6 +24,7 @@ use wealthfolio_core::{
     },
     portfolios::PortfolioServiceTrait,
     quotes::QuoteServiceTrait,
+    scenarios::ScenarioServiceTrait,
     settings::SettingsServiceTrait,
     taxonomies::TaxonomyServiceTrait,
 };
@@ -77,6 +78,12 @@ pub trait AgentEnvironment: Send + Sync {
 
     /// Get the portfolio service for reading portfolios (named account groups).
     fn portfolio_service(&self) -> Arc<dyn PortfolioServiceTrait>;
+
+    /// Get the scenario service for saved projections. Hosts without
+    /// scenarios return `None`, and the scenario tools then report that.
+    fn scenario_service(&self) -> Option<Arc<dyn ScenarioServiceTrait>> {
+        None
+    }
 
     /// Get the net-worth service for assets-minus-liabilities reads.
     fn net_worth_service(&self) -> Arc<dyn NetWorthServiceTrait>;

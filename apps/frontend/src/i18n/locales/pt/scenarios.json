@@ -105,5 +105,13 @@
     "window_3Y": "+3 anos",
     "window_END": "Até o fim",
     "real_vs_projected": "Real vs. projetado"
+  },
+  "assistant": {
+    "title": "Transações planejadas para {{name}}",
+    "description": "Um rascunho. Nada é salvo até você adicioná-lo, e ele nunca vira uma atividade real.",
+    "failed": "Não foi possível preparar as transações planejadas.",
+    "add": "Adicionar ao cenário ({{count}})",
+    "added": "Adicionado ao cenário ({{count}})",
+    "open": "Abrir cenário"
   }
 }

@@ -23,6 +23,7 @@ import { ListCategorizationContextToolUI } from "./list-categorization-context-t
 import { PerformanceToolUI } from "./performance-tool-ui";
 import { RecordActivityToolUI } from "./record-activity-tool-ui";
 import { RecordActivitiesToolUI } from "./record-activities-tool-ui";
+import { DraftScenarioTransactionsToolUI } from "./draft-scenario-transactions-tool-ui";
 import {
   SpendingBudgetToolUI,
   SpendingEventsToolUI,
@@ -65,6 +66,7 @@ export const toolUIs = {
   search_spending_transactions: SpendingTransactionsToolUI,
   get_budget: SpendingBudgetToolUI,
   get_event_spending_summaries: SpendingEventsToolUI,
+  draft_scenario_transactions: DraftScenarioTransactionsToolUI,
 } as const;
 
 export type ToolUIName = keyof typeof toolUIs;
@@ -87,6 +89,7 @@ export {
   PerformanceToolUI,
   RecordActivityToolUI,
   RecordActivitiesToolUI,
+  DraftScenarioTransactionsToolUI,
   ValuationToolUI,
   ListSpendingEventsToolUI,
   SpendingBudgetToolUI,

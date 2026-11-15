@@ -81,6 +81,7 @@ pub struct ServerAiEnvironment {
     event_bus: EventBus,
     fx_service: Arc<dyn FxServiceTrait + Send + Sync>,
     alternative_asset_service: Arc<dyn AlternativeAssetServiceTrait + Send + Sync>,
+    scenario_service: Option<Arc<dyn wealthfolio_core::scenarios::ScenarioServiceTrait>>,
 }
 
 impl ServerAiEnvironment {
@@ -157,7 +158,17 @@ impl ServerAiEnvironment {
             event_bus,
             fx_service,
             alternative_asset_service,
+            scenario_service: None,
         }
+    }
+
+    /// Lets the agent tools read and draft scenarios.
+    pub fn with_scenario_service(
+        mut self,
+        service: Arc<dyn wealthfolio_core::scenarios::ScenarioServiceTrait>,
+    ) -> Self {
+        self.scenario_service = Some(service);
+        self
     }
 }
 
@@ -240,6 +251,12 @@ impl AgentEnvironment for ServerAiEnvironment {
 
     fn portfolio_service(&self) -> Arc<dyn PortfolioServiceTrait> {
         self.portfolio_service.clone()
+    }
+
+    fn scenario_service(
+        &self,
+    ) -> Option<Arc<dyn wealthfolio_core::scenarios::ScenarioServiceTrait>> {
+        self.scenario_service.clone()
     }
 
     fn net_worth_service(&self) -> Arc<dyn NetWorthServiceTrait> {

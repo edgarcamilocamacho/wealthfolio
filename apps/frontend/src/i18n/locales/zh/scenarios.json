@@ -105,5 +105,13 @@
     "window_3Y": "+3 年",
     "window_END": "直到结束",
     "real_vs_projected": "实际与预测"
+  },
+  "assistant": {
+    "title": "{{name}} 的计划交易",
+    "description": "这是草稿。添加前不会保存任何内容，也不会变成真实活动。",
+    "failed": "无法准备计划交易。",
+    "add": "添加到情景（{{count}}）",
+    "added": "已添加到情景（{{count}}）",
+    "open": "打开情景"
   }
 }

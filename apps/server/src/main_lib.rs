@@ -1066,7 +1066,8 @@ async fn initialize_profile_state(
         event_bus.clone(),
         fx_service.clone(),
         alternative_asset_service.clone(),
-    ));
+    )
+    .with_scenario_service(scenario_service.clone()));
     let agent_environment: Arc<dyn wealthfolio_agent_tools::AgentEnvironment> =
         ai_environment.clone();
     let ai_chat_service = Arc::new(ChatService::new(ai_environment, ChatConfig::default()));

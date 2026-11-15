@@ -1521,6 +1521,10 @@
       "holdings_write": {
         "label": "Posizioni — scrittura",
         "description": "Salva istantanee delle posizioni (posizioni e liquidità a una data) per i conti che monitorano le posizioni, e aggiungi asset alternativi e passività. Richiede l'ambito posizioni (lettura)."
+      },
+      "scenarios_write": {
+        "label": "Scenari — scrittura",
+        "description": "Aggiungere transazioni pianificate agli scenari salvati. Non diventano mai attività reali. Richiede l'ambito di lettura della pianificazione finanziaria."
       }
     },
     "preset": {

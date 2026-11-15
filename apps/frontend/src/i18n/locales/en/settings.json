@@ -1440,6 +1440,10 @@
       "holdings_write": {
         "label": "Holdings — write",
         "description": "Save holdings snapshots (positions and cash on a date) for accounts that track holdings, and add alternative assets and liabilities. Requires the holdings read scope."
+      },
+      "scenarios_write": {
+        "label": "Scenarios — write",
+        "description": "Add planned transactions to saved scenarios. They never become real activities. Requires the financial planning read scope."
       }
     },
     "preset": {

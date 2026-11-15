@@ -105,5 +105,13 @@
     "window_3Y": "+3 ans",
     "window_END": "Jusqu'à la fin",
     "real_vs_projected": "Réel vs projeté"
+  },
+  "assistant": {
+    "title": "Transactions prévues pour {{name}}",
+    "description": "Un brouillon. Rien n'est enregistré avant que vous l'ajoutiez, et il ne devient jamais une activité réelle.",
+    "failed": "Impossible de préparer les transactions prévues.",
+    "add": "Ajouter au scénario ({{count}})",
+    "added": "Ajouté au scénario ({{count}})",
+    "open": "Ouvrir le scénario"
   }
 }

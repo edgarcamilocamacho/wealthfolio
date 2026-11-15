@@ -105,5 +105,13 @@
     "window_3Y": "+3 years",
     "window_END": "Until the end",
     "real_vs_projected": "Real vs projected"
+  },
+  "assistant": {
+    "title": "Planned transactions for {{name}}",
+    "description": "A draft. Nothing is saved until you add it, and it never becomes a real activity.",
+    "failed": "Could not draft the planned transactions.",
+    "add": "Add to scenario ({{count}})",
+    "added": "Added to the scenario ({{count}})",
+    "open": "Open scenario"
   }
 }

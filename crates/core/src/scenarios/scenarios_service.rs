@@ -12,8 +12,8 @@ use super::engine::{project, EngineAccount, EngineInput, EngineTransaction};
 use super::scenarios_model::{
     AccountGrowthModel, NewScenarioTransaction, SaveScenarioTransactionsRequest, Scenario,
     ScenarioAssumptions, ScenarioInput, ScenarioProjection, ScenarioProjectionPoint,
-    ScenarioTransaction, ScenarioTransactionInput, ScenarioTransactionKind, ScenarioWarning,
-    ScenarioWarningCode,
+    ScenarioTransaction, ScenarioTransactionInput, ScenarioTransactionKind,
+    ScenarioTransactionUpdate, ScenarioWarning, ScenarioWarningCode,
 };
 use super::scenarios_traits::{ScenarioRepositoryTrait, ScenarioServiceTrait};
 use super::series::{expand_series, parse_date};
@@ -368,6 +368,14 @@ pub(crate) fn assemble_projection(inputs: &ProjectionInputs<'_>) -> Result<Scena
     })
 }
 
+/// A validated batch, ready for the repository.
+struct PreparedChanges {
+    creates: Vec<NewScenarioTransaction>,
+    updates: Vec<ScenarioTransactionUpdate>,
+    delete_ids: Vec<String>,
+    delete_series_ids: Vec<String>,
+}
+
 pub struct ScenarioService {
     repository: Arc<dyn ScenarioRepositoryTrait>,
     account_service: Arc<dyn AccountServiceTrait>,
@@ -420,6 +428,66 @@ impl ScenarioService {
             return Err(invalid(format!("Account {missing} does not exist")));
         }
         Ok(())
+    }
+
+    /// Validates a batch, expands its series and checks that every account
+    /// it names exists.
+    fn prepare_changes(
+        &self,
+        scenario_id: &str,
+        request: SaveScenarioTransactionsRequest,
+    ) -> Result<PreparedChanges> {
+        self.repository.get_scenario(scenario_id)?;
+
+        let mut creates: Vec<NewScenarioTransaction> = Vec::new();
+        for input in request.creates {
+            creates.push(NewScenarioTransaction {
+                input: validate_transaction_input(input)?,
+                series_id: None,
+                series_label: None,
+            });
+        }
+        let mut delete_series_ids = Vec::new();
+        for rule in &request.series {
+            let series_id = match &rule.replace_series_id {
+                Some(id) => {
+                    delete_series_ids.push(id.clone());
+                    id.clone()
+                }
+                None => Uuid::new_v4().to_string(),
+            };
+            for mut row in expand_series(rule, &series_id)? {
+                row.input = validate_transaction_input(row.input)?;
+                creates.push(row);
+            }
+        }
+        if creates.len() > MAX_CREATES_PER_SAVE {
+            return Err(invalid(format!(
+                "One save can create at most {MAX_CREATES_PER_SAVE} transactions"
+            )));
+        }
+        let mut updates = Vec::new();
+        for mut update in request.updates {
+            update.input = validate_transaction_input(update.input)?;
+            updates.push(update);
+        }
+
+        let referenced: BTreeSet<String> = creates
+            .iter()
+            .map(|row| &row.input)
+            .chain(updates.iter().map(|update| &update.input))
+            .flat_map(|input| {
+                std::iter::once(input.account_id.clone()).chain(input.to_account_id.clone())
+            })
+            .collect();
+        self.ensure_accounts_exist(referenced)?;
+
+        Ok(PreparedChanges {
+            creates,
+            updates,
+            delete_ids: request.delete_ids,
+            delete_series_ids,
+        })
     }
 
     /// The last usable valuation on or before the anchor.
@@ -480,63 +548,27 @@ impl ScenarioServiceTrait for ScenarioService {
         self.repository.list_transactions(scenario_id)
     }
 
+    fn preview_scenario_transactions(
+        &self,
+        scenario_id: &str,
+        request: &SaveScenarioTransactionsRequest,
+    ) -> Result<Vec<NewScenarioTransaction>> {
+        Ok(self.prepare_changes(scenario_id, request.clone())?.creates)
+    }
+
     async fn save_scenario_transactions(
         &self,
         scenario_id: &str,
         request: SaveScenarioTransactionsRequest,
     ) -> Result<Vec<ScenarioTransaction>> {
-        self.repository.get_scenario(scenario_id)?;
-
-        let mut creates: Vec<NewScenarioTransaction> = Vec::new();
-        for input in request.creates {
-            creates.push(NewScenarioTransaction {
-                input: validate_transaction_input(input)?,
-                series_id: None,
-                series_label: None,
-            });
-        }
-        let mut delete_series_ids = Vec::new();
-        for rule in &request.series {
-            let series_id = match &rule.replace_series_id {
-                Some(id) => {
-                    delete_series_ids.push(id.clone());
-                    id.clone()
-                }
-                None => Uuid::new_v4().to_string(),
-            };
-            for mut row in expand_series(rule, &series_id)? {
-                row.input = validate_transaction_input(row.input)?;
-                creates.push(row);
-            }
-        }
-        if creates.len() > MAX_CREATES_PER_SAVE {
-            return Err(invalid(format!(
-                "One save can create at most {MAX_CREATES_PER_SAVE} transactions"
-            )));
-        }
-        let mut updates = Vec::new();
-        for mut update in request.updates {
-            update.input = validate_transaction_input(update.input)?;
-            updates.push(update);
-        }
-
-        let referenced: BTreeSet<String> = creates
-            .iter()
-            .map(|row| &row.input)
-            .chain(updates.iter().map(|update| &update.input))
-            .flat_map(|input| {
-                std::iter::once(input.account_id.clone()).chain(input.to_account_id.clone())
-            })
-            .collect();
-        self.ensure_accounts_exist(referenced)?;
-
+        let changes = self.prepare_changes(scenario_id, request)?;
         self.repository
             .apply_transaction_changes(
                 scenario_id,
-                creates,
-                updates,
-                request.delete_ids,
-                delete_series_ids,
+                changes.creates,
+                changes.updates,
+                changes.delete_ids,
+                changes.delete_series_ids,
             )
             .await?;
         self.repository.list_transactions(scenario_id)

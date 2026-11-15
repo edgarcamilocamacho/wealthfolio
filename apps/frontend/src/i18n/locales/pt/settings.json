@@ -1521,6 +1521,10 @@
       "holdings_write": {
         "label": "Posições: gravar",
         "description": "Salvar instantâneos de posições (posições e caixa em uma data) em contas que acompanham posições, e adicionar ativos alternativos e passivos. Requer o escopo de posições (leitura)."
+      },
+      "scenarios_write": {
+        "label": "Cenários — escrita",
+        "description": "Adicionar transações planejadas a cenários salvos. Elas nunca viram atividades reais. Requer o escopo de leitura de planejamento financeiro."
       }
     },
     "preset": {

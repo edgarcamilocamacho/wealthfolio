@@ -105,5 +105,13 @@
     "window_3Y": "+3 年",
     "window_END": "直到結束",
     "real_vs_projected": "實際與推估"
+  },
+  "assistant": {
+    "title": "{{name}} 的計畫交易",
+    "description": "這是草稿。新增前不會儲存任何內容，也不會變成實際活動。",
+    "failed": "無法準備計畫交易。",
+    "add": "新增到情境（{{count}}）",
+    "added": "已新增到情境（{{count}}）",
+    "open": "開啟情境"
   }
 }

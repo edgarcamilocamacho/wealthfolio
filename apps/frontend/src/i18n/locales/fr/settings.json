@@ -1521,6 +1521,10 @@
       "holdings_write": {
         "label": "Positions — écrire",
         "description": "Enregistrer des instantanés de positions (positions et liquidités à une date) pour les comptes qui suivent des positions, et ajouter des actifs alternatifs et des passifs. Nécessite la portée positions (lecture)."
+      },
+      "scenarios_write": {
+        "label": "Scénarios — écriture",
+        "description": "Ajouter des transactions prévues aux scénarios enregistrés. Elles ne deviennent jamais des activités réelles. Nécessite le droit de lecture de la planification financière."
       }
     },
     "preset": {

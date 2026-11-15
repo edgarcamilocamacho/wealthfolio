@@ -1099,6 +1099,115 @@ export type GoalHealth = "on_track" | "at_risk" | "off_track" | "not_applicable"
 export type PlanKind = "retirement" | "save_up";
 export type PlannerMode = "fire" | "traditional";
 
+// Scenarios: saved projections with hypothetical transactions.
+export type ScenarioGrowthModel =
+  | { model: "flat" }
+  | {
+      model: "rate";
+      /** Effective annual rate (0.08 = 8 % a year). */
+      annualRate: number;
+      /** Share of each day's interest withheld as tax. */
+      interestTaxRate: number;
+      /** Tax charged on each withdrawal or outgoing transfer. */
+      outflowTaxRate: number;
+    };
+
+export interface ScenarioAssumptions {
+  /** Growth model per account id. Accounts without one are flat. */
+  accounts: Record<string, ScenarioGrowthModel>;
+  /** Annual drift of each currency against the base currency. */
+  fx: Record<string, number>;
+}
+
+export interface Scenario {
+  id: string;
+  name: string;
+  description?: string | null;
+  /** YYYY-MM-DD */
+  anchorDate: string;
+  /** YYYY-MM-DD */
+  endDate: string;
+  assumptions: ScenarioAssumptions;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScenarioInput {
+  name: string;
+  description?: string | null;
+  anchorDate: string;
+  endDate: string;
+  assumptions: ScenarioAssumptions;
+}
+
+export type ScenarioTransactionKind = "DEPOSIT" | "WITHDRAWAL" | "TRANSFER";
+
+export interface ScenarioTransactionInput {
+  /** YYYY-MM-DD */
+  date: string;
+  kind: ScenarioTransactionKind;
+  accountId: string;
+  toAccountId?: string | null;
+  /** Positive, in the source account's currency. */
+  amount: number;
+  /** Amount received, in the destination's currency. */
+  toAmount?: number | null;
+  note?: string | null;
+}
+
+export interface ScenarioTransaction extends ScenarioTransactionInput {
+  id: string;
+  scenarioId: string;
+  seriesId?: string | null;
+  seriesLabel?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScenarioSeriesRule extends Omit<ScenarioTransactionInput, "date"> {
+  label: string;
+  /** 1..31; past a short month's end it falls on the last day. */
+  dayOfMonth: number;
+  startDate: string;
+  endDate: string;
+  replaceSeriesId?: string | null;
+}
+
+export interface SaveScenarioTransactionsRequest {
+  creates?: ScenarioTransactionInput[];
+  updates?: (ScenarioTransactionInput & { id: string })[];
+  deleteIds?: string[];
+  series?: ScenarioSeriesRule[];
+}
+
+export type ScenarioWarningCode =
+  | "UNKNOWN_ACCOUNT"
+  | "NO_ANCHOR_VALUATION"
+  | "MISSING_FX_RATE"
+  | "NEGATIVE_BALANCE";
+
+export interface ScenarioWarning {
+  code: ScenarioWarningCode;
+  accountId?: string | null;
+  currency?: string | null;
+  date?: string | null;
+}
+
+export interface ScenarioProjectionPoint {
+  date: string;
+  /** In `ScenarioProjection.currency`. */
+  value: number;
+  valueBase: number;
+}
+
+export interface ScenarioProjection {
+  scenarioId: string;
+  baseCurrency: string;
+  currency: string;
+  points: ScenarioProjectionPoint[];
+  warnings: ScenarioWarning[];
+}
+
 export interface Goal {
   id: string;
   goalType: GoalType;

@@ -257,6 +257,19 @@ export {
   setContributionActivityExcluded,
 } from "../shared/contribution-limits";
 
+// Scenario Commands
+export {
+  createScenario,
+  deleteScenario,
+  duplicateScenario,
+  getScenario,
+  getScenarioProjection,
+  getScenarios,
+  getScenarioTransactions,
+  saveScenarioTransactions,
+  updateScenario,
+} from "../shared/scenarios";
+
 // Exchange Rates Commands
 export {
   addExchangeRate,

@@ -48,6 +48,7 @@ use wealthfolio_core::{
     },
     portfolios::{PortfolioService, PortfolioServiceTrait},
     quotes::{QuoteService, QuoteServiceTrait},
+    scenarios::{ScenarioService, ScenarioServiceTrait},
     secrets::SecretStore,
     settings::{SettingsRepositoryTrait, SettingsService, SettingsServiceTrait},
     taxonomies::{TaxonomyService, TaxonomyServiceTrait},
@@ -68,6 +69,7 @@ use wealthfolio_storage_sqlite::{
     market_data::{MarketDataRepository, QuoteSyncStateRepository},
     portfolio::{snapshot::SnapshotRepository, valuation::ValuationRepository},
     portfolios::PortfolioRepository,
+    scenarios::ScenarioRepository,
     settings::SettingsRepository,
     sync::{AppSyncRepository, BrokerSyncStateRepository, ImportRunRepository, PlatformRepository},
     taxonomies::TaxonomyRepository,
@@ -113,6 +115,7 @@ pub struct AppState {
     pub income_service: Arc<dyn IncomeServiceTrait + Send + Sync>,
     pub goal_service: Arc<dyn GoalServiceTrait + Send + Sync>,
     pub limits_service: Arc<dyn ContributionLimitServiceTrait + Send + Sync>,
+    pub scenario_service: Arc<dyn ScenarioServiceTrait + Send + Sync>,
     pub fx_service: Arc<dyn FxServiceTrait + Send + Sync>,
     pub activity_service: Arc<dyn ActivityServiceTrait + Send + Sync>,
     pub asset_service: Arc<dyn AssetServiceTrait + Send + Sync>,
@@ -663,6 +666,16 @@ async fn initialize_profile_state(
         timezone.clone(),
     ));
 
+    let scenario_service: Arc<dyn ScenarioServiceTrait + Send + Sync> =
+        Arc::new(ScenarioService::new(
+            Arc::new(ScenarioRepository::new(pool.clone(), writer.clone())),
+            account_service.clone(),
+            portfolio_service.clone(),
+            valuation_service.clone(),
+            fx_service.clone(),
+            timezone.clone(),
+        ));
+
     // Alternative asset repository for alternative assets operations
     let alternative_asset_repository: Arc<dyn AlternativeAssetRepositoryTrait + Send + Sync> =
         Arc::new(AlternativeAssetRepository::new(
@@ -1205,6 +1218,7 @@ async fn initialize_profile_state(
         income_service,
         goal_service,
         limits_service,
+        scenario_service,
         fx_service: fx_service.clone(),
         activity_service,
         asset_service,

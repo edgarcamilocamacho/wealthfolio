@@ -275,6 +275,37 @@ diesel::table! {
 }
 
 diesel::table! {
+    scenarios (id) {
+        id -> Text,
+        name -> Text,
+        description -> Nullable<Text>,
+        anchor_date -> Text,
+        end_date -> Text,
+        assumptions_json -> Text,
+        created_at -> Text,
+        updated_at -> Text,
+    }
+}
+
+diesel::table! {
+    scenario_transactions (id) {
+        id -> Text,
+        scenario_id -> Text,
+        date -> Text,
+        kind -> Text,
+        account_id -> Text,
+        to_account_id -> Nullable<Text>,
+        amount -> Double,
+        to_amount -> Nullable<Double>,
+        note -> Nullable<Text>,
+        series_id -> Nullable<Text>,
+        series_label -> Nullable<Text>,
+        created_at -> Text,
+        updated_at -> Text,
+    }
+}
+
+diesel::table! {
     goals_allocation (id) {
         id -> Text,
         goal_id -> Text,
@@ -875,6 +906,7 @@ diesel::joinable!(brokers_sync_state -> import_runs (last_run_id));
 diesel::joinable!(goals_allocation -> accounts (account_id));
 diesel::joinable!(goal_plans -> goals (goal_id));
 diesel::joinable!(goals_allocation -> goals (goal_id));
+diesel::joinable!(scenario_transactions -> scenarios (scenario_id));
 diesel::joinable!(import_runs -> accounts (account_id));
 diesel::joinable!(lots -> accounts (account_id));
 diesel::joinable!(lots -> assets (asset_id));
@@ -960,4 +992,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     personal_access_tokens,
     mcp_audit_log,
     allocation_target_constraints,
+    scenarios,
+    scenario_transactions,
 );

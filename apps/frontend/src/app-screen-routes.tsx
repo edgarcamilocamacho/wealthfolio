@@ -49,6 +49,8 @@ import GoalsDashboardPage from "@/features/goals/pages/goals-dashboard-page";
 import GoalNewPage from "@/features/goals/pages/goal-new-page";
 import GoalDetailPage from "@/features/goals/pages/goal-detail-page";
 import GoalRetirementGuidePage from "@/features/goals/pages/goal-retirement-guide-page";
+import ScenariosPage from "@/features/scenarios/pages/scenarios-page";
+import ScenarioDetailPage from "@/features/scenarios/pages/scenario-detail-page";
 
 // Old deep links carry stage/period/range params and a #cashflow anchor.
 function SpendingInsightsRedirect() {
@@ -114,6 +116,8 @@ export const AppScreenRoutes = memo(function AppScreenRoutes({ location }: AppSc
       <Route path="goals/new" element={<GoalNewPage />} />
       <Route path="goals/:goalId/guide" element={<GoalRetirementGuidePage />} />
       <Route path="goals/:goalId" element={<GoalDetailPage />} />
+      <Route path="scenarios" element={<ScenariosPage />} />
+      <Route path="scenarios/:scenarioId" element={<ScenarioDetailPage />} />
       <Route path="spending/insights" element={<SpendingInsightsRedirect />} />
       <Route path={SPENDING_ENTRY_PATH} element={<SpendingActivityPage />} />
       <Route path="spending/budget" element={<SpendingBudgetPage />} />

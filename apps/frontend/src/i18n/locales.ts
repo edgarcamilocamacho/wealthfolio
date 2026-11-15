@@ -77,6 +77,7 @@ export const NAMESPACES = [
   "health",
   "sync",
   "connect",
+  "scenarios",
 ] as const;
 
 export const DEFAULT_NAMESPACE = "common";

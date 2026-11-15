@@ -331,6 +331,7 @@
     "view": "عرض"
   },
   "goals": "الأهداف",
+  "scenarios": "السيناريوهات",
   "help": "المساعدة",
   "hide": "إخفاء",
   "holdings": "الحيازات",
@@ -373,6 +374,7 @@
     "label_assistant": "مساعد الذكاء الاصطناعي",
     "label_dashboard": "عرض لوحة المعلومات",
     "label_goals": "الأهداف",
+    "label_scenarios": "عرض السيناريوهات",
     "label_holdings": "عرض الحيازات",
     "label_insights": "عرض الرؤى التحليلية"
   },

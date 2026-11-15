@@ -40,6 +40,13 @@ export const QueryKeys = {
   goalPlan: (id: string) => [QueryKeys.GOAL_PLAN, id],
   GOAL_FUNDING: "goalFunding",
   goalFunding: (id: string) => [QueryKeys.GOAL_FUNDING, id],
+  // Scenario related keys
+  SCENARIOS: "scenarios",
+  SCENARIO: "scenario",
+  scenario: (id: string) => [QueryKeys.SCENARIO, id],
+  SCENARIO_TRANSACTIONS: "scenarioTransactions",
+  scenarioTransactions: (id: string) => [QueryKeys.SCENARIO_TRANSACTIONS, id],
+  SCENARIO_PROJECTION: "scenarioProjection",
   RETIREMENT_OVERVIEW: "retirementOverview",
   retirementOverview: (id: string) => [QueryKeys.RETIREMENT_OVERVIEW, id],
   SAVE_UP_OVERVIEW: "saveUpOverview",

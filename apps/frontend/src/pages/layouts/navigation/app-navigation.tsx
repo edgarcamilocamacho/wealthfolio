@@ -63,6 +63,13 @@ function buildStaticNavigation(t: TFunction): NavigationProps {
         label: t("common:nav.label_goals"),
       },
       {
+        icon: <Icons.TrendingUp className="size-6" />,
+        title: t("common:scenarios"),
+        href: "/scenarios",
+        keywords: ["scenarios", "projection", "forecast", "what if", "plan"],
+        label: t("common:nav.label_scenarios"),
+      },
+      {
         icon: <Icons.Sparkles className="size-6" />,
         title: t("common:assistant"),
         href: "/assistant",

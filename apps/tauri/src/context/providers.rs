@@ -36,6 +36,7 @@ use wealthfolio_core::{
     },
     portfolios::PortfolioService,
     quotes::{QuoteService, QuoteServiceTrait},
+    scenarios::ScenarioService,
     settings::{SettingsRepositoryTrait, SettingsService, SettingsServiceTrait},
     taxonomies::TaxonomyService,
 };
@@ -59,6 +60,7 @@ use wealthfolio_storage_sqlite::{
         valuation::ValuationRepository,
     },
     portfolios::PortfolioRepository,
+    scenarios::ScenarioRepository,
     settings::SettingsRepository,
     sync::{AppSyncRepository, BrokerSyncStateRepository, ImportRunRepository, PlatformRepository},
     taxonomies::TaxonomyRepository,
@@ -531,6 +533,15 @@ async fn build_context(
         timezone.clone(),
     ));
 
+    let scenario_service = Arc::new(ScenarioService::new(
+        Arc::new(ScenarioRepository::new(pool.clone(), writer.clone())),
+        account_service.clone(),
+        portfolio_service.clone(),
+        valuation_service.clone(),
+        fx_service.clone(),
+        timezone.clone(),
+    ));
+
     let portfolio_coordinator = Arc::new(PortfolioCoordinator::new(CoordinatorDeps {
         base_currency: base_currency.clone(),
         timezone: timezone.clone(),
@@ -837,6 +848,7 @@ async fn build_context(
             goal_service,
             quote_service,
             limits_service,
+            scenario_service,
             fx_service,
             performance_service,
             income_service,

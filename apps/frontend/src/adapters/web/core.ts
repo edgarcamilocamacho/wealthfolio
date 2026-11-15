@@ -156,6 +156,15 @@ export const COMMANDS: CommandMap = {
   delete_contribution_limit: { method: "DELETE", path: "/limits" },
   calculate_deposits_for_contribution_limit: { method: "GET", path: "/limits" },
   get_contribution_limit_details: { method: "GET", path: "/limits" },
+  get_scenarios: { method: "GET", path: "/scenarios" },
+  get_scenario: { method: "GET", path: "/scenarios" },
+  create_scenario: { method: "POST", path: "/scenarios" },
+  update_scenario: { method: "PUT", path: "/scenarios" },
+  delete_scenario: { method: "DELETE", path: "/scenarios" },
+  duplicate_scenario: { method: "POST", path: "/scenarios" },
+  get_scenario_transactions: { method: "GET", path: "/scenarios" },
+  save_scenario_transactions: { method: "POST", path: "/scenarios" },
+  get_scenario_projection: { method: "POST", path: "/scenarios" },
   set_contribution_activity_excluded: { method: "PUT", path: "/limits" },
   // Asset profile
   get_assets: { method: "GET", path: "/assets" },
@@ -1018,6 +1027,54 @@ export const invoke = async <T>(command: string, payload?: Record<string, unknow
     case "test_custom_provider_source": {
       const { payload: tp } = payload as { payload: Record<string, unknown> };
       body = JSON.stringify(tp);
+      break;
+    }
+    case "get_scenario":
+    case "delete_scenario": {
+      const { id } = payload as { id: string };
+      url += `/${encodeURIComponent(id)}`;
+      break;
+    }
+    case "create_scenario": {
+      const { scenario } = payload as { scenario: Record<string, unknown> };
+      body = JSON.stringify(scenario);
+      break;
+    }
+    case "update_scenario": {
+      const { id, scenario } = payload as { id: string; scenario: Record<string, unknown> };
+      url += `/${encodeURIComponent(id)}`;
+      body = JSON.stringify(scenario);
+      break;
+    }
+    case "duplicate_scenario": {
+      const { id, name } = payload as { id: string; name: string };
+      url += `/${encodeURIComponent(id)}/duplicate`;
+      body = JSON.stringify({ name });
+      break;
+    }
+    case "get_scenario_transactions": {
+      const { scenarioId } = payload as { scenarioId: string };
+      url += `/${encodeURIComponent(scenarioId)}/transactions`;
+      break;
+    }
+    case "save_scenario_transactions": {
+      const { scenarioId, request } = payload as {
+        scenarioId: string;
+        request: Record<string, unknown>;
+      };
+      url += `/${encodeURIComponent(scenarioId)}/transactions`;
+      body = JSON.stringify(request);
+      break;
+    }
+    case "get_scenario_projection": {
+      const { scenarioId, filter, startDate, endDate } = payload as {
+        scenarioId: string;
+        filter?: Record<string, unknown>;
+        startDate?: string;
+        endDate?: string;
+      };
+      url += `/${encodeURIComponent(scenarioId)}/projection`;
+      body = JSON.stringify({ filter, startDate, endDate });
       break;
     }
     case "create_contribution_limit": {

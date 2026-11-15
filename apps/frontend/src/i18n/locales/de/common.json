@@ -63,6 +63,7 @@
   "holdings": "Bestände",
   "performance": "Wertentwicklung",
   "goals": "Ziele",
+  "scenarios": "Szenarien",
   "settings": "Einstellungen",
   "about": "Info",
   "logout": "Abmelden",
@@ -102,6 +103,7 @@
     "label_holdings": "Bestände anzeigen",
     "label_activities": "Aktivitäten anzeigen",
     "label_goals": "Ziele",
+    "label_scenarios": "Szenarien anzeigen",
     "label_assistant": "KI-Assistent"
   },
   "layout": {

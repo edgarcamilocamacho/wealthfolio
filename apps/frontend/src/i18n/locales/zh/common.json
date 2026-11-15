@@ -62,6 +62,7 @@
   "holdings": "持仓",
   "performance": "表现",
   "goals": "目标",
+  "scenarios": "情景",
   "settings": "设置",
   "help": "帮助",
   "about": "关于",
@@ -105,6 +106,7 @@
     "label_holdings": "查看持仓",
     "label_activities": "查看活动",
     "label_goals": "目标",
+    "label_scenarios": "查看情景",
     "label_assistant": "AI 助手"
   },
   "layout": {

@@ -62,6 +62,7 @@
   "holdings": "Posições",
   "performance": "Desempenho",
   "goals": "Metas",
+  "scenarios": "Cenários",
   "settings": "Configurações",
   "help": "Ajuda",
   "about": "Sobre",
@@ -105,6 +106,7 @@
     "label_holdings": "Ver posições",
     "label_activities": "Ver atividades",
     "label_goals": "Metas",
+    "label_scenarios": "Ver cenários",
     "label_assistant": "Assistente de IA"
   },
   "layout": {

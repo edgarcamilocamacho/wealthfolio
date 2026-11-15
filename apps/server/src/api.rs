@@ -58,6 +58,7 @@ mod performance;
 pub(crate) mod portable_backups;
 mod portfolio;
 mod portfolios;
+mod scenarios;
 mod secrets;
 mod settings;
 pub mod shared;
@@ -208,6 +209,7 @@ fn app_router_with_profiles(
         .merge(secrets::router())
         .merge(addon_network::router())
         .merge(limits::router())
+        .merge(scenarios::router())
         .merge(addons::router())
         .merge(taxonomies::router())
         .merge(net_worth::router())

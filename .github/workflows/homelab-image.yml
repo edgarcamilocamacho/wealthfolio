@@ -1,0 +1,53 @@
+# Fork-only workflow (branch `homelab`, never upstreamed): builds the server image with the
+# fork's patches for the homelab cluster (linux/arm64 only) and publishes it to GHCR.
+#
+# Release: tag the `homelab` branch as `<upstream version>-homelab.<n>` (e.g. 3.13.0-homelab.1).
+# Tags without a leading `v` keep upstream's release workflows (tags `v*`) from running.
+# Manual runs build and test without publishing.
+name: Homelab image
+
+on:
+  push:
+    tags: ["*-homelab.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          load: true
+          tags: wealthfolio-homelab:ci
+          # Upstream's public cache of third-party Rust dependencies; a miss only costs time.
+          cache-from: type=registry,ref=ghcr.io/wealthfolio/wealthfolio-build-cache:deps-arm64
+      - name: Test runtime compatibility and encryption in the built image
+        run: |
+          python3 .github/scripts/encryption_smoke.py --image wealthfolio-homelab:ci
+          python3 .github/scripts/encryption_smoke.py --image wealthfolio-homelab:ci --user 99:100
+      - name: Log into GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish
+        if: github.event_name == 'push'
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/wealthfolio:${{ github.ref_name }}
+        run: |
+          docker tag wealthfolio-homelab:ci "$IMAGE"
+          docker push "$IMAGE"

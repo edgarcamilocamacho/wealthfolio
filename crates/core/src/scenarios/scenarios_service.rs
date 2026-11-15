@@ -329,8 +329,17 @@ pub(crate) fn assemble_projection(inputs: &ProjectionInputs<'_>) -> Result<Scena
         transactions: &transactions,
     });
 
+    // A position that already starts below zero (a liability, an overdrawn
+    // card) is not news when it stays there.
+    let starts_below_zero: BTreeSet<&str> = accounts
+        .iter()
+        .filter(|account| account.start_value < 0.0)
+        .map(|account| account.id.as_str())
+        .collect();
     for (account_id, date) in &output.first_negative {
-        if in_scope.contains(account_id.as_str()) {
+        if in_scope.contains(account_id.as_str())
+            && !starts_below_zero.contains(account_id.as_str())
+        {
             warnings.push(ScenarioWarning {
                 code: ScenarioWarningCode::NegativeBalance,
                 account_id: Some(account_id.clone()),
@@ -1192,6 +1201,24 @@ mod tests {
         // The AED account has no rate, so it is left out of base totals.
         assert_eq!(projection.points[0].value_base, 0.0);
         assert_eq!(projection.points.last().map(|p| p.value_base), Some(-10.0));
+    }
+
+    #[test]
+    fn positions_that_start_negative_raise_no_negative_balance_warning() {
+        let mut fixture = Fixture::new();
+        fixture
+            .currencies
+            .insert("loan".to_string(), "USD".to_string());
+        fixture.anchors.insert(
+            "loan".to_string(),
+            AnchorValue {
+                value: -8_000.0,
+                fx_rate_to_base: None,
+            },
+        );
+        let projection = fixture.project(&["usd", "loan"], false, (None, None));
+        assert!(projection.warnings.is_empty());
+        assert_eq!(projection.points[0].value, 1_000.0 - 8_000.0);
     }
 
     #[test]

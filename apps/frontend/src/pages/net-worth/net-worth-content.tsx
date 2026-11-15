@@ -379,17 +379,17 @@ export function NetWorthContent() {
               </div>
             </div>
           )}
-          {historyData && historyData.length > 0 && (
-            <ScenarioOverlayControl
-              overlay={scenarioOverlay}
-              deviation={scenarioDeviation}
-              className="pointer-events-auto relative z-20 mt-2 px-4"
-            />
-          )}
         </div>
 
         {/* Content section */}
         <div className="grow px-4 pt-14 pb-[var(--mobile-nav-total-offset)] md:px-6 md:pt-12 md:pb-6 lg:px-10 lg:pt-14 lg:pb-8">
+          {historyData && historyData.length > 0 && (
+            <ScenarioOverlayControl
+              overlay={scenarioOverlay}
+              deviation={scenarioDeviation}
+              className="mb-6"
+            />
+          )}
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-12">
             {/* Left column: Breakdown */}
             <div className="lg:col-span-2">

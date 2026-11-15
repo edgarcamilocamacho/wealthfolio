@@ -36,7 +36,7 @@ use wealthfolio_core::{
     },
     portfolios::PortfolioService,
     quotes::{QuoteService, QuoteServiceTrait},
-    scenarios::ScenarioService,
+    scenarios::{ScenarioService, ScenarioServiceSources},
     settings::{SettingsRepositoryTrait, SettingsService, SettingsServiceTrait},
     taxonomies::TaxonomyService,
 };
@@ -535,10 +535,15 @@ async fn build_context(
 
     let scenario_service = Arc::new(ScenarioService::new(
         Arc::new(ScenarioRepository::new(pool.clone(), writer.clone())),
-        account_service.clone(),
-        portfolio_service.clone(),
-        valuation_service.clone(),
-        fx_service.clone(),
+        ScenarioServiceSources {
+            account_service: account_service.clone(),
+            portfolio_service: portfolio_service.clone(),
+            valuation_service: valuation_service.clone(),
+            fx_service: fx_service.clone(),
+            asset_service: asset_service.clone(),
+            quote_service: quote_service.clone(),
+            activity_repository: activity_repository.clone(),
+        },
         timezone.clone(),
     ));
 

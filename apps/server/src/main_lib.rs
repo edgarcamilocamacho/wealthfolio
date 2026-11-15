@@ -48,7 +48,7 @@ use wealthfolio_core::{
     },
     portfolios::{PortfolioService, PortfolioServiceTrait},
     quotes::{QuoteService, QuoteServiceTrait},
-    scenarios::{ScenarioService, ScenarioServiceTrait},
+    scenarios::{ScenarioService, ScenarioServiceSources, ScenarioServiceTrait},
     secrets::SecretStore,
     settings::{SettingsRepositoryTrait, SettingsService, SettingsServiceTrait},
     taxonomies::{TaxonomyService, TaxonomyServiceTrait},
@@ -669,10 +669,15 @@ async fn initialize_profile_state(
     let scenario_service: Arc<dyn ScenarioServiceTrait + Send + Sync> =
         Arc::new(ScenarioService::new(
             Arc::new(ScenarioRepository::new(pool.clone(), writer.clone())),
-            account_service.clone(),
-            portfolio_service.clone(),
-            valuation_service.clone(),
-            fx_service.clone(),
+            ScenarioServiceSources {
+                account_service: account_service.clone(),
+                portfolio_service: portfolio_service.clone(),
+                valuation_service: valuation_service.clone(),
+                fx_service: fx_service.clone(),
+                asset_service: asset_service.clone(),
+                quote_service: quote_service.clone(),
+                activity_repository: activity_repository.clone(),
+            },
             timezone.clone(),
         ));
 

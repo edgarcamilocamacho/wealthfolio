@@ -79,7 +79,16 @@
     "interest_tax": "Imposto retido sobre juros",
     "outflow_tax": "Imposto sobre saques",
     "fx_title": "Taxas de câmbio",
-    "fx_description": "Variação anual de cada moeda frente a {{currency}}. Negativo significa que ela perde valor."
+    "fx_description": "Variação anual de cada moeda frente a {{currency}}. Negativo significa que ela perde valor.",
+    "assets_title": "Imóveis e outros ativos",
+    "assets_description": "Como muda o valor de cada ativo alternativo. Um imóvel na planta pode valer o que foi pago e começar a valorizar na data de entrega.",
+    "model_appreciation": "Valorização anual",
+    "appreciation": "Valorização por ano",
+    "growth_from": "Começa a valorizar em (opcional)",
+    "suggest": "Usar histórico",
+    "suggest_hint": "Preenche a taxa e a retenção com os juros e impostos desta conta nos últimos 12 meses.",
+    "suggest_none": "{{account}} não tem juros nos últimos 12 meses para medir.",
+    "suggest_done": "Taxa calculada com {{count}} pagamentos de juros de {{account}}. Salve para mantê-la."
   },
   "chart": {
     "title": "Projeção",
@@ -89,7 +98,10 @@
     "difference": "Diferença",
     "real_vs_projected": "Real vs. projetado em {{date}}",
     "projected_at": "Projetado em {{date}}",
-    "empty": "Nada para projetar ainda."
+    "empty": "Nada para projetar ainda.",
+    "description_net_worth": "Patrimônio líquido real (linha contínua) e a projeção (pontilhada), com imóveis e passivos, na sua moeda base.",
+    "kind_accounts": "Contas",
+    "kind_net_worth": "Patrimônio líquido"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "Uma transação planejada usa uma conta que não existe mais ({{account}}).",

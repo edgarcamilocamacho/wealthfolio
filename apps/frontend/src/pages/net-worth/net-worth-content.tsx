@@ -1,4 +1,7 @@
 import { useNetWorth, useNetWorthHistory } from "@/hooks/use-alternative-assets";
+import { ScenarioOverlayControl } from "@/features/scenarios/components/scenario-overlay-control";
+import { useScenarioOverlay } from "@/features/scenarios/hooks/use-scenario-overlay";
+import { overlayDeviation } from "@/features/scenarios/lib/scenario-overlay";
 import { usePortfolioAllocations } from "@/hooks/use-portfolio-allocations";
 import { useIsMobileViewport } from "@/hooks/use-platform";
 import { getNetWorthCategoryLabel } from "@/lib/net-worth-category-label";
@@ -52,6 +55,8 @@ const DEFAULT_INTERVAL: TimePeriod = "ALL";
 const INTERVAL_STORAGE_KEY = "networth-interval";
 const MS_PER_DAY = 86_400_000;
 
+const NET_WORTH_SCOPE = { type: "all" } as const;
+
 export function NetWorthContent() {
   const { t } = useTranslation();
   const formatting = useNumberFormatting();
@@ -104,6 +109,21 @@ export function NetWorthContent() {
     endDate: historyDates?.endDate ?? "",
     enabled: !!historyDates,
   });
+
+  const scenarioOverlay = useScenarioOverlay({
+    scope: NET_WORTH_SCOPE,
+    netWorth: true,
+    startDate: historyDates?.startDate,
+    todayISO: currentDateISO,
+  });
+  const scenarioDeviation = useMemo(
+    () =>
+      overlayDeviation(
+        (historyData ?? []).map((point) => ({ date: point.date, totalValue: point.netWorth })),
+        scenarioOverlay.points,
+      ),
+    [historyData, scenarioOverlay.points],
+  );
 
   const { data: longHistoryData } = useNetWorthHistory({
     startDate: longHistoryDates?.startDate ?? "",
@@ -321,7 +341,11 @@ export function NetWorthContent() {
               <Skeleton className="h-full w-full" />
             </div>
           ) : historyData && historyData.length > 0 ? (
-            <NetWorthChart data={historyData} isLoading={isHistoryLoading} />
+            <NetWorthChart
+              data={historyData}
+              isLoading={isHistoryLoading}
+              projection={scenarioOverlay.points}
+            />
           ) : (
             <div className="flex h-full flex-col items-center justify-center">
               <Icons.TrendingUp className="text-muted-foreground/30 mb-3 h-12 w-12" />
@@ -354,6 +378,13 @@ export function NetWorthContent() {
                 />
               </div>
             </div>
+          )}
+          {historyData && historyData.length > 0 && (
+            <ScenarioOverlayControl
+              overlay={scenarioOverlay}
+              deviation={scenarioDeviation}
+              className="pointer-events-auto relative z-20 mt-2 px-4"
+            />
           )}
         </div>
 

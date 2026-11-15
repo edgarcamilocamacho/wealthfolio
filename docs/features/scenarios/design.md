@@ -305,6 +305,8 @@ Reuse the draft-then-confirm pattern of `record_activities`
 
 ## 10. Phases
 
+All four phases are implemented on `feat/scenarios`.
+
 1. **Core and editor.** Migration, engine with the invariant tests, service,
    commands in both runtimes, adapters (with the parity test), the scenarios
    page and editor, and the preview chart.
@@ -312,15 +314,30 @@ Reuse the draft-then-confirm pattern of `record_activities`
    tooltip, and the real-vs-projected figure on the dashboard and account page.
 3. **AI.** The draft tool and its card, the MCP commit tool and scope, and the
    read tool.
-4. **Later:**
-   - Net-worth overlay with alternative assets: property appreciation,
-     liabilities through the existing loan engine (`calculate_loan`), and an
-     off-plan property model (worth what has been paid, growing with each
-     instalment).
-   - "Suggest from history": a `rate` model filled in from the last 12 months of
-     `INTEREST` and `TAX` activities against the average balance.
-   - Inclusion in "export every dataset", and device sync.
-   - Volatility bands and inflation.
+4. **Net worth and history.**
+   - **Alternative assets are positions.** A scenario projects every alternative
+     asset from its latest quote on or before the anchor, in its quote currency.
+     A non-liability asset can take the `rate` model as an annual appreciation,
+     and a transfer can pay into it (an instalment on a property). The `rate`
+     model gains an optional `growthFrom` date: an off-plan property stays at
+     what was paid until handover, then appreciates.
+   - **Liabilities** count negative. A loan with terms follows its amortization
+     from `calculate_loan` as a schedule of balances (recorded balances
+     included; tagged payments are not read). Other liabilities stay flat.
+     Transfers cannot target a liability.
+   - **Net worth projection** (`get_scenario_net_worth_projection`): every
+     net-worth account plus every alternative asset, in base currency. It draws
+     on the net-worth chart through the same picker, and the scenario page's
+     preview switches between accounts and net worth.
+   - **Suggest from history** (`suggest_scenario_account_growth`): gross
+     interest (final amount plus the tax recorded on it) over the average daily
+     balance of the last 12 months, compounded daily into an effective annual
+     rate; withholding is that recorded tax plus standalone `TAX` activities,
+     over gross interest. Activities in another currency than the account's are
+     left out.
+
+Still out: inclusion in "export every dataset", device sync, volatility bands,
+inflation, and parity tests against the add-on prototype's CSVs.
 
 ## 11. Verification
 
@@ -341,18 +358,20 @@ Reuse the draft-then-confirm pattern of `record_activities`
 ## 12. Architecture impact
 
 - **Added:** two tables, a core module (`crates/core/src/scenarios`), a service,
-  nine commands in both runtimes, a frontend feature, and an optional prop on
-  `HistoryChart`.
+  eleven commands in both runtimes, a frontend feature, optional projection
+  props on `HistoryChart` and the net-worth chart, three agent tools and the
+  `scenarios:write` agent scope.
 - **Unchanged:**
   - the portfolio engine, valuations and their recalculation lifecycle;
   - real activities (scenario rows never enter the activities table or the
     engine);
-  - market-data and FX fetching (projection reads stored rates only, so no new
-    network calls);
+  - market-data and FX fetching (projection reads stored rates and quotes only,
+    so no new network calls);
   - domain events (no new event);
-  - device sync (the new tables are local-only in v1).
-- **Read-only dependencies:** valuation history on the anchor date, stored FX
-  rates, and account scope resolution.
+  - device sync (the new tables are local-only).
+- **Read-only dependencies:** valuation history, stored FX rates and quotes,
+  alternative assets and their loan terms, an account's INTEREST and TAX
+  activities (for suggestions), and account scope resolution.
 
 ## 13. Decisions
 

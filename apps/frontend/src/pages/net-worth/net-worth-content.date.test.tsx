@@ -10,6 +10,19 @@ const queryMocks = vi.hoisted(() => ({
 const settingsMock = vi.hoisted(() => ({ timezone: "Asia/Shanghai" }));
 const intervalMocks = vi.hoisted(() => ({ period: "ALL" as "ALL" | "1M" | "YTD" }));
 
+vi.mock("@/features/scenarios/hooks/use-scenario-overlay", () => ({
+  useScenarioOverlay: () => ({
+    scenarios: [],
+    activeScenario: null,
+    setActiveScenarioId: vi.fn(),
+    futureWindow: "1Y",
+    setFutureWindow: vi.fn(),
+    points: undefined,
+    warnings: [],
+    isLoading: false,
+  }),
+}));
+
 vi.mock("@/hooks/use-alternative-assets", () => queryMocks);
 vi.mock("@/hooks/use-portfolio-allocations", () => ({
   usePortfolioAllocations: () => ({ allocations: undefined }),

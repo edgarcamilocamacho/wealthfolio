@@ -1110,6 +1110,8 @@ export type ScenarioGrowthModel =
       interestTaxRate: number;
       /** Tax charged on each withdrawal or outgoing transfer. */
       outflowTaxRate: number;
+      /** YYYY-MM-DD; growth starts on this day. */
+      growthFrom?: string | null;
     };
 
 export interface ScenarioAssumptions {
@@ -1191,6 +1193,15 @@ export interface ScenarioWarning {
   accountId?: string | null;
   currency?: string | null;
   date?: string | null;
+}
+
+export interface ScenarioGrowthSuggestion {
+  accountId: string;
+  annualRate: number;
+  interestTaxRate: number;
+  periodStart: string;
+  periodEnd: string;
+  interestPayments: number;
 }
 
 export interface ScenarioProjectionPoint {

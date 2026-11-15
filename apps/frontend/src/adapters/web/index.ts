@@ -263,10 +263,12 @@ export {
   deleteScenario,
   duplicateScenario,
   getScenario,
+  getScenarioNetWorthProjection,
   getScenarioProjection,
   getScenarios,
   getScenarioTransactions,
   saveScenarioTransactions,
+  suggestScenarioAccountGrowth,
   updateScenario,
 } from "../shared/scenarios";
 

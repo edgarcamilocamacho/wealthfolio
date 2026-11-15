@@ -79,7 +79,16 @@
     "interest_tax": "Retenue sur les intérêts",
     "outflow_tax": "Taxe sur les retraits",
     "fx_title": "Taux de change",
-    "fx_description": "Variation annuelle de chaque devise face à {{currency}}. Négatif signifie qu'elle perd de la valeur."
+    "fx_description": "Variation annuelle de chaque devise face à {{currency}}. Négatif signifie qu'elle perd de la valeur.",
+    "assets_title": "Biens et autres actifs",
+    "assets_description": "Comment la valeur de chaque actif alternatif évolue. Un bien acheté sur plan peut valoir ce qui a été payé et s'apprécier à partir de sa date de livraison.",
+    "model_appreciation": "Appréciation annuelle",
+    "appreciation": "Appréciation par an",
+    "growth_from": "S'apprécie à partir du (facultatif)",
+    "suggest": "Utiliser l'historique",
+    "suggest_hint": "Remplit le taux et la retenue à partir des intérêts et impôts de ce compte sur les 12 derniers mois.",
+    "suggest_none": "{{account}} n'a pas d'intérêts sur les 12 derniers mois à mesurer.",
+    "suggest_done": "Taux calculé à partir de {{count}} versements d'intérêts de {{account}}. Enregistrez pour le garder."
   },
   "chart": {
     "title": "Projection",
@@ -89,7 +98,10 @@
     "difference": "Écart",
     "real_vs_projected": "Réel vs projeté au {{date}}",
     "projected_at": "Projeté au {{date}}",
-    "empty": "Rien à projeter pour l'instant."
+    "empty": "Rien à projeter pour l'instant.",
+    "description_net_worth": "Patrimoine net réel (trait plein) et projection (pointillé), avec biens et passifs, dans votre devise de base.",
+    "kind_accounts": "Comptes",
+    "kind_net_worth": "Patrimoine net"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "Une transaction prévue utilise un compte qui n'existe plus ({{account}}).",

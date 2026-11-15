@@ -38,7 +38,8 @@ pub struct ScenarioInput {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ScenarioAssumptions {
-    /// Growth model per account id. An account without an entry is `flat`.
+    /// Growth model per account or alternative-asset id. Without an entry a
+    /// position is `flat`.
     #[serde(default)]
     pub accounts: BTreeMap<String, AccountGrowthModel>,
     /// Annual drift of each currency against the base currency
@@ -65,6 +66,10 @@ pub enum AccountGrowthModel {
         /// Tax charged on each withdrawal or outgoing transfer (0.004 = 4×1000).
         #[serde(default)]
         outflow_tax_rate: f64,
+        /// YYYY-MM-DD. Growth starts on this day (e.g. a property handed over
+        /// on a date); before it the position changes only through transactions.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        growth_from: Option<String>,
     },
 }
 
@@ -235,4 +240,20 @@ pub enum ScenarioWarningCode {
     MissingFxRate,
     /// The projected balance goes below zero on `date`.
     NegativeBalance,
+}
+
+/// A `rate` model inferred from an account's recent interest and taxes.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountGrowthSuggestion {
+    pub account_id: String,
+    /// Effective annual rate of the gross interest over the average balance.
+    pub annual_rate: f64,
+    /// Share of the gross interest withheld as tax.
+    pub interest_tax_rate: f64,
+    /// YYYY-MM-DD, first day of the window measured.
+    pub period_start: String,
+    /// YYYY-MM-DD, last day of the window measured.
+    pub period_end: String,
+    pub interest_payments: usize,
 }

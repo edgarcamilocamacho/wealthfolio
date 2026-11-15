@@ -165,6 +165,8 @@ export const COMMANDS: CommandMap = {
   get_scenario_transactions: { method: "GET", path: "/scenarios" },
   save_scenario_transactions: { method: "POST", path: "/scenarios" },
   get_scenario_projection: { method: "POST", path: "/scenarios" },
+  get_scenario_net_worth_projection: { method: "POST", path: "/scenarios" },
+  suggest_scenario_account_growth: { method: "GET", path: "/scenarios/growth-suggestions" },
   set_contribution_activity_excluded: { method: "PUT", path: "/limits" },
   // Asset profile
   get_assets: { method: "GET", path: "/assets" },
@@ -1075,6 +1077,21 @@ export const invoke = async <T>(command: string, payload?: Record<string, unknow
       };
       url += `/${encodeURIComponent(scenarioId)}/projection`;
       body = JSON.stringify({ filter, startDate, endDate });
+      break;
+    }
+    case "suggest_scenario_account_growth": {
+      const { accountId } = payload as { accountId: string };
+      url += `/${encodeURIComponent(accountId)}`;
+      break;
+    }
+    case "get_scenario_net_worth_projection": {
+      const { scenarioId, startDate, endDate } = payload as {
+        scenarioId: string;
+        startDate?: string;
+        endDate?: string;
+      };
+      url += `/${encodeURIComponent(scenarioId)}/net-worth-projection`;
+      body = JSON.stringify({ startDate, endDate });
       break;
     }
     case "create_contribution_limit": {

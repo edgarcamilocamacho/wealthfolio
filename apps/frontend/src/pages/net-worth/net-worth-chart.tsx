@@ -1,6 +1,7 @@
 import { useHapticFeedback } from "@/hooks";
 import { useBalancePrivacy } from "@/hooks/use-balance-privacy";
 import { useIsMobileViewport, useViewportBelow } from "@/hooks/use-platform";
+import type { HistoryProjectionPoint } from "@/components/history-chart-projection";
 import type { NetWorthHistoryPoint } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { AmountDisplay, useAmountFormatting, useDateFormatting } from "@wealthfolio/ui";
@@ -22,9 +23,16 @@ interface ChartDataPoint {
   currency: string;
 }
 
+/** A history day, a projected-only future day, or both. */
+interface ChartRow extends Partial<Omit<ChartDataPoint, "date" | "currency">> {
+  date: string;
+  currency: string;
+  projectedValue?: number;
+}
+
 interface TooltipEntry {
   dataKey?: string | number;
-  payload?: ChartDataPoint;
+  payload?: ChartRow;
 }
 
 interface TooltipBaseProps {
@@ -49,30 +57,66 @@ const CustomTooltip = ({ active, payload, isBalanceHidden, t }: CustomTooltipPro
     return null;
   }
 
-  const hasLiabilities = entry.totalLiabilities > 0;
+  const hasLiabilities = (entry.totalLiabilities ?? 0) > 0;
+  const hasNetWorth = entry.netWorth !== undefined;
+  const hasProjection = entry.projectedValue !== undefined;
 
   return (
     <div className="bg-popover grid grid-cols-1 gap-1.5 rounded-md border p-2 shadow-md">
       <p className="text-muted-foreground text-xs">{formatDate(entry.date, dateFormatting)}</p>
 
       {/* Net Worth - primary value */}
-      <div className="flex items-center justify-between space-x-4">
-        <div className="flex items-center space-x-1.5">
-          <span className="block h-0.5 w-3" style={{ backgroundColor: THEME_COLOR }} />
-          <span className="text-muted-foreground text-xs">
-            {t("insights:networth.chart.net_worth_label")}
-          </span>
+      {hasNetWorth && (
+        <div className="flex items-center justify-between space-x-4">
+          <div className="flex items-center space-x-1.5">
+            <span className="block h-0.5 w-3" style={{ backgroundColor: THEME_COLOR }} />
+            <span className="text-muted-foreground text-xs">
+              {t("insights:networth.chart.net_worth_label")}
+            </span>
+          </div>
+          <AmountDisplay
+            value={entry.netWorth}
+            currency={entry.currency}
+            isHidden={isBalanceHidden}
+            className="text-xs font-semibold"
+          />
         </div>
-        <AmountDisplay
-          value={entry.netWorth}
-          currency={entry.currency}
-          isHidden={isBalanceHidden}
-          className="text-xs font-semibold"
-        />
-      </div>
+      )}
+
+      {hasProjection && (
+        <div className="flex items-center justify-between space-x-4">
+          <div className="flex items-center space-x-1.5">
+            <span
+              className="block h-0 w-3 border-b-2 border-dotted"
+              style={{ borderColor: THEME_COLOR }}
+            />
+            <span className="text-muted-foreground text-xs">{t("scenarios:chart.projected")}</span>
+          </div>
+          <AmountDisplay
+            value={entry.projectedValue}
+            currency={entry.currency}
+            isHidden={isBalanceHidden}
+            className="text-xs font-semibold"
+          />
+        </div>
+      )}
+      {hasNetWorth && hasProjection && (
+        <div className="flex items-center justify-between space-x-4">
+          <span className="text-muted-foreground ps-4.5 text-xs">
+            {t("scenarios:chart.difference")}
+          </span>
+          <AmountDisplay
+            value={(entry.netWorth ?? 0) - (entry.projectedValue ?? 0)}
+            currency={entry.currency}
+            isHidden={isBalanceHidden}
+            colorFormat
+            className="text-xs font-semibold"
+          />
+        </div>
+      )}
 
       {/* Show breakdown only if there are liabilities (otherwise net worth = assets) */}
-      {hasLiabilities && (
+      {hasLiabilities && hasNetWorth && (
         <div className="border-border mt-1 border-t pt-1.5">
           <div className="flex items-center justify-between space-x-4">
             <span className="text-muted-foreground/70 text-xs">
@@ -118,12 +162,32 @@ function transformData(data: NetWorthHistoryPoint[]): ChartDataPoint[] {
   }));
 }
 
+/** Adds projected values to history days and appends projected-only future days. */
+function mergeProjection(
+  history: ChartDataPoint[],
+  projection: HistoryProjectionPoint[] | undefined,
+): ChartRow[] {
+  if (!projection || projection.length === 0 || history.length === 0) return history;
+  const firstDate = history[0].date.slice(0, 10);
+  const currency = history[history.length - 1].currency;
+  const rows = new Map<string, ChartRow>(history.map((row) => [row.date.slice(0, 10), { ...row }]));
+  for (const point of projection) {
+    if (point.date < firstDate) continue;
+    const existing = rows.get(point.date);
+    if (existing) existing.projectedValue = point.value;
+    else rows.set(point.date, { date: point.date, currency, projectedValue: point.value });
+  }
+  return [...rows.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 interface NetWorthChartProps {
   data: NetWorthHistoryPoint[];
   isLoading?: boolean;
+  /** A scenario's projected net worth, drawn as a dotted line. */
+  projection?: HistoryProjectionPoint[];
 }
 
-export function NetWorthChart({ data, isLoading }: NetWorthChartProps) {
+export function NetWorthChart({ data, isLoading, projection }: NetWorthChartProps) {
   const { t } = useTranslation();
   const { triggerHaptic } = useHapticFeedback();
   const { formatAmount } = useAmountFormatting();
@@ -138,6 +202,7 @@ export function NetWorthChart({ data, isLoading }: NetWorthChartProps) {
   const fillGradientId = `nwFill-${id}`;
 
   const chartData = transformData(data);
+  const rows = mergeProjection(chartData, projection);
 
   const chartConfig = {
     netWorth: {
@@ -184,7 +249,7 @@ export function NetWorthChart({ data, isLoading }: NetWorthChartProps) {
   return (
     <ChartContainer config={chartConfig} className="h-full w-full" data-no-swipe-drag>
       <AreaChart
-        data={chartData}
+        data={rows}
         margin={{
           top: 0,
           right: 0,
@@ -238,6 +303,20 @@ export function NetWorthChart({ data, isLoading }: NetWorthChartProps) {
           fillOpacity={1}
           fill={`url(#${fillGradientId})`}
         />
+        {projection && projection.length > 0 && (
+          <Area
+            isAnimationActive={false}
+            connectNulls={true}
+            type="monotone"
+            dataKey="projectedValue"
+            stroke={THEME_COLOR}
+            strokeWidth={1.75}
+            strokeOpacity={0.75}
+            strokeDasharray="2 4"
+            fill="transparent"
+            activeDot={false}
+          />
+        )}
         {crossesZero && (
           <ReferenceLine
             y={0}

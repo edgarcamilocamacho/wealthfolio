@@ -79,7 +79,16 @@
     "interest_tax": "Retención sobre el interés",
     "outflow_tax": "Impuesto sobre retiros",
     "fx_title": "Tasas de cambio",
-    "fx_description": "Cambio anual de cada moneda frente a {{currency}}. Negativo significa que pierde valor."
+    "fx_description": "Cambio anual de cada moneda frente a {{currency}}. Negativo significa que pierde valor.",
+    "assets_title": "Propiedades y otros activos",
+    "assets_description": "Cómo cambia el valor de cada activo alternativo. Un inmueble sobre planos puede valer lo pagado y empezar a valorizarse en su fecha de entrega.",
+    "model_appreciation": "Valorización anual",
+    "appreciation": "Valorización por año",
+    "growth_from": "Empieza a valorizarse el (opcional)",
+    "suggest": "Usar historial",
+    "suggest_hint": "Llena la tasa y la retención con los intereses e impuestos de esta cuenta en los últimos 12 meses.",
+    "suggest_none": "{{account}} no tiene intereses en los últimos 12 meses para medir.",
+    "suggest_done": "Tasa calculada con {{count}} pagos de interés de {{account}}. Guarda para conservarla."
   },
   "chart": {
     "title": "Proyección",
@@ -89,7 +98,10 @@
     "difference": "Diferencia",
     "real_vs_projected": "Real vs. proyectado el {{date}}",
     "projected_at": "Proyectado al {{date}}",
-    "empty": "Aún no hay nada que proyectar."
+    "empty": "Aún no hay nada que proyectar.",
+    "description_net_worth": "Patrimonio neto real (línea continua) y la proyección (punteada), con propiedades y pasivos, en tu moneda base.",
+    "kind_accounts": "Cuentas",
+    "kind_net_worth": "Patrimonio neto"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "Una transacción planeada usa una cuenta que ya no existe ({{account}}).",

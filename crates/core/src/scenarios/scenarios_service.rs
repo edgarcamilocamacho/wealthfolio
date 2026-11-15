@@ -10,18 +10,28 @@ use uuid::Uuid;
 
 use super::engine::{project, EngineAccount, EngineInput, EngineTransaction};
 use super::scenarios_model::{
-    AccountGrowthModel, NewScenarioTransaction, SaveScenarioTransactionsRequest, Scenario,
-    ScenarioAssumptions, ScenarioInput, ScenarioProjection, ScenarioProjectionPoint,
-    ScenarioTransaction, ScenarioTransactionInput, ScenarioTransactionKind,
-    ScenarioTransactionUpdate, ScenarioWarning, ScenarioWarningCode,
+    AccountGrowthModel, AccountGrowthSuggestion, NewScenarioTransaction,
+    SaveScenarioTransactionsRequest, Scenario, ScenarioAssumptions, ScenarioInput,
+    ScenarioProjection, ScenarioProjectionPoint, ScenarioTransaction, ScenarioTransactionInput,
+    ScenarioTransactionKind, ScenarioTransactionUpdate, ScenarioWarning, ScenarioWarningCode,
 };
 use super::scenarios_traits::{ScenarioRepositoryTrait, ScenarioServiceTrait};
 use super::series::{expand_series, parse_date};
+use super::suggest::{infer_rate, InterestEvent, SuggestionInputs};
 use crate::accounts::{AccountPurpose, AccountServiceTrait};
+use crate::activities::{
+    ActivityRepositoryTrait, ActivityStatus, ACTIVITY_TYPE_INTEREST, ACTIVITY_TYPE_TAX,
+};
+use crate::assets::loan::{
+    calculate_loan, LoanBalance, LoanCalculationRequest, LOAN_PROJECTION_KEY,
+};
+use crate::assets::{Asset, AssetKind, AssetServiceTrait};
 use crate::errors::{Error, Result, ValidationError};
+use crate::fx::currency::normalize_amount;
 use crate::fx::FxServiceTrait;
 use crate::portfolio::valuation::{ValuationServiceTrait, ValuationStatus};
 use crate::portfolios::{AccountScope, PortfolioServiceTrait};
+use crate::quotes::QuoteServiceTrait;
 use crate::utils::time_utils::{parse_user_timezone_or_default, user_today};
 
 const MAX_NAME_CHARS: usize = 100;
@@ -120,11 +130,15 @@ fn validate_assumptions(assumptions: &ScenarioAssumptions) -> Result<()> {
             annual_rate,
             interest_tax_rate,
             outflow_tax_rate,
+            growth_from,
         } = model
         {
             check_rate(*annual_rate, "The annual rate")?;
             check_share(*interest_tax_rate, "The interest tax")?;
             check_share(*outflow_tax_rate, "The withdrawal tax")?;
+            if let Some(date) = growth_from {
+                parse_date(date, "The growth start date")?;
+            }
         }
     }
     for (currency, drift) in &assumptions.fx {
@@ -211,6 +225,8 @@ pub(crate) struct ProjectionInputs<'a> {
     /// Account ids that transactions name but that do not exist.
     pub unknown_account_ids: &'a BTreeSet<String>,
     pub anchor_values: &'a HashMap<String, AnchorValue>,
+    /// Scheduled balances per position (loan amortization), in its currency.
+    pub schedules: &'a HashMap<String, Vec<(NaiveDate, f64)>>,
     /// Units of base currency per unit of each currency on the anchor date.
     pub fx_at_anchor: &'a HashMap<String, f64>,
     pub transactions: &'a [ScenarioTransaction],
@@ -267,6 +283,7 @@ pub(crate) fn assemble_projection(inputs: &ProjectionInputs<'_>) -> Result<Scena
                     .get(id)
                     .cloned()
                     .unwrap_or_default(),
+                schedule: inputs.schedules.get(id).cloned().unwrap_or_default(),
             }
         })
         .collect();
@@ -382,24 +399,38 @@ pub struct ScenarioService {
     portfolio_service: Arc<dyn PortfolioServiceTrait>,
     valuation_service: Arc<dyn ValuationServiceTrait>,
     fx_service: Arc<dyn FxServiceTrait>,
+    asset_service: Arc<dyn AssetServiceTrait>,
+    quote_service: Arc<dyn QuoteServiceTrait>,
+    activity_repository: Arc<dyn ActivityRepositoryTrait>,
     timezone: Arc<RwLock<String>>,
+}
+
+/// The services a scenario projection reads from.
+pub struct ScenarioServiceSources {
+    pub account_service: Arc<dyn AccountServiceTrait>,
+    pub portfolio_service: Arc<dyn PortfolioServiceTrait>,
+    pub valuation_service: Arc<dyn ValuationServiceTrait>,
+    pub fx_service: Arc<dyn FxServiceTrait>,
+    pub asset_service: Arc<dyn AssetServiceTrait>,
+    pub quote_service: Arc<dyn QuoteServiceTrait>,
+    pub activity_repository: Arc<dyn ActivityRepositoryTrait>,
 }
 
 impl ScenarioService {
     pub fn new(
         repository: Arc<dyn ScenarioRepositoryTrait>,
-        account_service: Arc<dyn AccountServiceTrait>,
-        portfolio_service: Arc<dyn PortfolioServiceTrait>,
-        valuation_service: Arc<dyn ValuationServiceTrait>,
-        fx_service: Arc<dyn FxServiceTrait>,
+        sources: ScenarioServiceSources,
         timezone: Arc<RwLock<String>>,
     ) -> Self {
         Self {
             repository,
-            account_service,
-            portfolio_service,
-            valuation_service,
-            fx_service,
+            account_service: sources.account_service,
+            portfolio_service: sources.portfolio_service,
+            valuation_service: sources.valuation_service,
+            fx_service: sources.fx_service,
+            asset_service: sources.asset_service,
+            quote_service: sources.quote_service,
+            activity_repository: sources.activity_repository,
             timezone,
         }
     }
@@ -418,12 +449,22 @@ impl ScenarioService {
             return Ok(());
         }
         let ids: Vec<String> = account_ids.iter().cloned().collect();
-        let found: BTreeSet<String> = self
+        let mut found: BTreeSet<String> = self
             .account_service
             .get_accounts_by_ids(&ids)?
             .into_iter()
             .map(|account| account.id)
             .collect();
+        if found.len() < account_ids.len() {
+            // Money can also go into an alternative asset (an instalment on a
+            // property), never into a liability, whose balance its loan drives.
+            found.extend(
+                self.alternative_assets()?
+                    .into_iter()
+                    .filter(|asset| asset.kind != AssetKind::Liability)
+                    .map(|asset| asset.id),
+            );
+        }
         if let Some(missing) = account_ids.difference(&found).next() {
             return Err(invalid(format!("Account {missing} does not exist")));
         }
@@ -583,16 +624,204 @@ impl ScenarioServiceTrait for ScenarioService {
         end_date: Option<NaiveDate>,
     ) -> Result<ScenarioProjection> {
         let scenario = self.repository.get_scenario(scenario_id)?;
-        let anchor = parse_date(&scenario.anchor_date, "The anchor date")?;
         let resolved = self.portfolio_service.resolve_account_scope_for_purpose(
             scope,
             base_currency,
             AccountPurpose::Holdings,
         )?;
         let single_account = matches!(scope, AccountScope::Account { .. });
-        let transactions = self.repository.list_transactions(scenario_id)?;
+        self.project_positions(
+            &scenario,
+            &resolved.account_ids,
+            single_account,
+            base_currency,
+            start_date,
+            end_date,
+        )
+    }
 
-        let mut referenced: BTreeSet<String> = resolved.account_ids.iter().cloned().collect();
+    fn suggest_account_growth(&self, account_id: &str) -> Result<Option<AccountGrowthSuggestion>> {
+        let account = self.account_service.get_account(account_id)?;
+        let end = self.today();
+        let start = end
+            .checked_sub_days(Days::new(364))
+            .ok_or_else(|| invalid("The suggestion window is out of range"))?;
+        let balances: Vec<(NaiveDate, f64)> = self
+            .valuation_service
+            .get_historical_valuations(account_id, Some(start), Some(end))?
+            .into_iter()
+            .filter(|row| row.value_status != ValuationStatus::Unavailable)
+            .filter_map(|row| Some((row.valuation_date, row.total_value.to_f64()?)))
+            .collect();
+        let Some(first_day) = balances.first().map(|(date, _)| *date) else {
+            return Ok(None);
+        };
+        let window_start = first_day
+            .and_hms_opt(0, 0, 0)
+            .map(|time| time.and_utc())
+            .ok_or_else(|| invalid("The suggestion window is out of range"))?;
+        let window_end = end
+            .succ_opt()
+            .and_then(|day| day.and_hms_opt(0, 0, 0))
+            .map(|time| time.and_utc())
+            .ok_or_else(|| invalid("The suggestion window is out of range"))?;
+        let activities = self
+            .activity_repository
+            .get_activities_by_account_ids_in_date_range(
+                std::slice::from_ref(&account.id),
+                window_start,
+                window_end,
+            )?;
+        let mut interest = Vec::new();
+        let mut standalone_tax = 0.0;
+        for activity in activities {
+            // Amounts in another currency are left out rather than mixed in.
+            if activity.status != ActivityStatus::Posted || activity.currency != account.currency {
+                continue;
+            }
+            let amount = activity
+                .amount
+                .and_then(|value| value.to_f64())
+                .unwrap_or(0.0)
+                .abs();
+            let tax = activity
+                .tax
+                .and_then(|value| value.to_f64())
+                .unwrap_or(0.0)
+                .abs();
+            match activity.effective_type() {
+                ACTIVITY_TYPE_INTEREST => interest.push(InterestEvent {
+                    date: activity.activity_date.date_naive(),
+                    net_amount: amount,
+                    tax,
+                }),
+                ACTIVITY_TYPE_TAX => standalone_tax += amount,
+                _ => {}
+            }
+        }
+        let interest_payments = interest.len();
+        Ok(infer_rate(&SuggestionInputs {
+            interest: &interest,
+            standalone_tax,
+            balances: &balances,
+        })
+        .map(|inferred| AccountGrowthSuggestion {
+            account_id: account.id,
+            annual_rate: inferred.annual_rate,
+            interest_tax_rate: inferred.interest_tax_rate,
+            period_start: format_date(first_day),
+            period_end: format_date(end),
+            interest_payments,
+        }))
+    }
+
+    async fn get_net_worth_projection(
+        &self,
+        scenario_id: &str,
+        base_currency: &str,
+        start_date: Option<NaiveDate>,
+        end_date: Option<NaiveDate>,
+    ) -> Result<ScenarioProjection> {
+        let scenario = self.repository.get_scenario(scenario_id)?;
+        let resolved = self.portfolio_service.resolve_account_scope_for_purpose(
+            &AccountScope::All,
+            base_currency,
+            AccountPurpose::NetWorth,
+        )?;
+        let mut scope_ids = resolved.account_ids;
+        scope_ids.extend(self.alternative_assets()?.into_iter().map(|asset| asset.id));
+        self.project_positions(
+            &scenario,
+            &scope_ids,
+            false,
+            base_currency,
+            start_date,
+            end_date,
+        )
+    }
+}
+
+impl ScenarioService {
+    fn alternative_assets(&self) -> Result<Vec<Asset>> {
+        Ok(self
+            .asset_service
+            .get_assets()?
+            .into_iter()
+            .filter(|asset| asset.kind.is_alternative())
+            .collect())
+    }
+
+    /// An alternative asset's value on or before the anchor, in its quote
+    /// currency. Liabilities come out negative.
+    fn asset_anchor_values(
+        &self,
+        assets: &[Asset],
+        anchor: NaiveDate,
+    ) -> Result<HashMap<String, (String, f64)>> {
+        let ids: Vec<String> = assets.iter().map(|asset| asset.id.clone()).collect();
+        if ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let quotes = self.quote_service.get_latest_quotes_as_of(&ids, anchor)?;
+        let mut values = HashMap::new();
+        for asset in assets {
+            let Some(quote) = quotes.get(&asset.id) else {
+                continue;
+            };
+            let (amount, currency) = normalize_amount(quote.close, &quote.currency);
+            let Some(value) = amount.to_f64() else {
+                continue;
+            };
+            let signed = if asset.kind == AssetKind::Liability {
+                -value.abs()
+            } else {
+                value
+            };
+            values.insert(asset.id.clone(), (currency.to_string(), signed));
+        }
+        Ok(values)
+    }
+
+    /// A loan's scheduled balances up to `end`, negative, from its terms and
+    /// recorded balances. None for liabilities without loan terms.
+    fn loan_schedule(&self, asset: &Asset, end: NaiveDate) -> Option<Vec<(NaiveDate, f64)>> {
+        let metadata = asset.metadata.as_ref()?;
+        metadata.get(LOAN_PROJECTION_KEY)?;
+        let quotes = self.quote_service.get_historical_quotes(&asset.id).ok()?;
+        let calculation = calculate_loan(&LoanCalculationRequest {
+            metadata: metadata.clone(),
+            balances: quotes.iter().map(LoanBalance::from).collect(),
+            as_of: end,
+            payments: Vec::new(),
+        })?;
+        Some(
+            calculation
+                .rows
+                .iter()
+                .map(|row| (row.date, -row.balance.abs()))
+                .collect(),
+        )
+    }
+
+    /// Projects the positions in `scope_ids`: accounts start from their
+    /// valuation on the anchor, alternative assets from their latest quote
+    /// on or before it. Positions that transactions name but that sit
+    /// outside the scope are projected too, so transfers convert correctly,
+    /// and left out of the totals.
+    fn project_positions(
+        &self,
+        scenario: &Scenario,
+        scope_ids: &[String],
+        single_account: bool,
+        base_currency: &str,
+        start_date: Option<NaiveDate>,
+        end_date: Option<NaiveDate>,
+    ) -> Result<ScenarioProjection> {
+        let anchor = parse_date(&scenario.anchor_date, "The anchor date")?;
+        let end = parse_date(&scenario.end_date, "The end date")?;
+        let transactions = self.repository.list_transactions(&scenario.id)?;
+
+        let mut referenced: BTreeSet<String> = scope_ids.iter().cloned().collect();
         for tx in &transactions {
             referenced.insert(tx.account_id.clone());
             if let Some(to) = &tx.to_account_id {
@@ -600,30 +829,66 @@ impl ScenarioServiceTrait for ScenarioService {
             }
         }
         let ids: Vec<String> = referenced.iter().cloned().collect();
-        let account_currencies: BTreeMap<String, String> = self
-            .account_service
-            .get_accounts_by_ids(&ids)?
-            .into_iter()
-            .map(|account| (account.id, account.currency))
+        let accounts = self.account_service.get_accounts_by_ids(&ids)?;
+        let mut currencies: BTreeMap<String, String> = accounts
+            .iter()
+            .map(|account| (account.id.clone(), account.currency.clone()))
             .collect();
-        let unknown_account_ids: BTreeSet<String> = referenced
-            .into_iter()
-            .filter(|id| !account_currencies.contains_key(id))
+
+        let missing: BTreeSet<&String> = referenced
+            .iter()
+            .filter(|id| !currencies.contains_key(*id))
             .collect();
+        let assets: Vec<Asset> = if missing.is_empty() {
+            Vec::new()
+        } else {
+            self.alternative_assets()?
+                .into_iter()
+                .filter(|asset| missing.contains(&asset.id))
+                .collect()
+        };
 
         let mut anchor_values = HashMap::new();
         let mut fx_at_anchor: HashMap<String, f64> = HashMap::new();
         fx_at_anchor.insert(base_currency.to_string(), 1.0);
-        for (account_id, currency) in &account_currencies {
-            if let Some(anchor_value) = self.anchor_value(account_id, anchor)? {
+        for account in &accounts {
+            if let Some(anchor_value) = self.anchor_value(&account.id, anchor)? {
                 if let Some(rate) = anchor_value.fx_rate_to_base {
-                    fx_at_anchor.entry(currency.clone()).or_insert(rate);
+                    fx_at_anchor.entry(account.currency.clone()).or_insert(rate);
                 }
-                anchor_values.insert(account_id.clone(), anchor_value);
+                anchor_values.insert(account.id.clone(), anchor_value);
             }
         }
-        let currencies: BTreeSet<&String> = account_currencies.values().collect();
-        for currency in currencies {
+        let asset_values = self.asset_anchor_values(&assets, anchor)?;
+        let mut schedules = HashMap::new();
+        for asset in &assets {
+            let currency = asset_values
+                .get(&asset.id)
+                .map(|(currency, _)| currency.clone())
+                .unwrap_or_else(|| asset.quote_ccy.clone());
+            currencies.insert(asset.id.clone(), currency);
+            if let Some((_, value)) = asset_values.get(&asset.id) {
+                anchor_values.insert(
+                    asset.id.clone(),
+                    AnchorValue {
+                        value: *value,
+                        fx_rate_to_base: None,
+                    },
+                );
+            }
+            if asset.kind == AssetKind::Liability {
+                if let Some(schedule) = self.loan_schedule(asset, end) {
+                    schedules.insert(asset.id.clone(), schedule);
+                }
+            }
+        }
+        let unknown_account_ids: BTreeSet<String> = referenced
+            .into_iter()
+            .filter(|id| !currencies.contains_key(id))
+            .collect();
+
+        let wanted: BTreeSet<&String> = currencies.values().collect();
+        for currency in wanted {
             if fx_at_anchor.contains_key(currency) {
                 continue;
             }
@@ -643,13 +908,14 @@ impl ScenarioServiceTrait for ScenarioService {
         }
 
         assemble_projection(&ProjectionInputs {
-            scenario: &scenario,
+            scenario,
             base_currency,
-            scope_account_ids: &resolved.account_ids,
+            scope_account_ids: scope_ids,
             single_account,
-            account_currencies: &account_currencies,
+            account_currencies: &currencies,
             unknown_account_ids: &unknown_account_ids,
             anchor_values: &anchor_values,
+            schedules: &schedules,
             fx_at_anchor: &fx_at_anchor,
             transactions: &transactions,
             start_date,
@@ -723,6 +989,7 @@ mod tests {
                 annual_rate: 0.08,
                 interest_tax_rate: 1.5,
                 outflow_tax_rate: 0.0,
+                growth_from: None,
             },
         );
         assert!(validate_scenario_input(input, date("2026-11-15")).is_err());
@@ -844,6 +1111,7 @@ mod tests {
                 account_currencies: &self.currencies,
                 unknown_account_ids: &self.unknown,
                 anchor_values: &self.anchors,
+                schedules: &HashMap::new(),
                 fx_at_anchor: &self.fx,
                 transactions: &self.transactions,
                 start_date: window.0.map(date),
@@ -936,6 +1204,7 @@ mod tests {
                 annual_rate: 0.08,
                 interest_tax_rate: 0.0,
                 outflow_tax_rate: 0.0,
+                growth_from: None,
             },
         );
         let projection = fixture.project(&["usd"], true, (None, None));

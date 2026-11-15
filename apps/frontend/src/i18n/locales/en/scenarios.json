@@ -79,7 +79,16 @@
     "interest_tax": "Tax withheld on interest",
     "outflow_tax": "Tax on withdrawals",
     "fx_title": "Exchange rates",
-    "fx_description": "Yearly change of each currency against {{currency}}. Negative means it loses value."
+    "fx_description": "Yearly change of each currency against {{currency}}. Negative means it loses value.",
+    "assets_title": "Properties and other assets",
+    "assets_description": "How each alternative asset changes in value. A property bought off-plan can stay at what was paid and start appreciating on its handover date.",
+    "model_appreciation": "Annual appreciation",
+    "appreciation": "Appreciation per year",
+    "growth_from": "Starts appreciating on (optional)",
+    "suggest": "Use history",
+    "suggest_hint": "Fill the rate and the withholding from this account's interest and taxes over the last 12 months.",
+    "suggest_none": "{{account}} has no interest in the last 12 months to measure.",
+    "suggest_done": "Rate filled in from {{count}} interest payments in {{account}}. Save to keep it."
   },
   "chart": {
     "title": "Projection",
@@ -89,7 +98,10 @@
     "difference": "Difference",
     "real_vs_projected": "Real vs projected on {{date}}",
     "projected_at": "Projected on {{date}}",
-    "empty": "Nothing to project yet."
+    "empty": "Nothing to project yet.",
+    "description_net_worth": "Real net worth (solid) and the projection (dotted), with properties and liabilities, in your base currency.",
+    "kind_accounts": "Accounts",
+    "kind_net_worth": "Net worth"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "A planned transaction uses an account that no longer exists ({{account}}).",

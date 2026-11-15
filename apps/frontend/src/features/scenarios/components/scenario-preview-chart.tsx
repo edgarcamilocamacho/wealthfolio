@@ -1,4 +1,4 @@
-import { AmountDisplay, GainPercent, Skeleton, useDateFormatting } from "@wealthfolio/ui";
+import { AmountDisplay, Button, GainPercent, Skeleton, useDateFormatting } from "@wealthfolio/ui";
 import {
   Card,
   CardContent,
@@ -21,6 +21,9 @@ interface Props {
   currency: string;
   isBalanceHidden: boolean;
   isLoading: boolean;
+  /** What the lines measure: the accounts, or net worth with assets and liabilities. */
+  kind: "accounts" | "netWorth";
+  onKindChange: (kind: "accounts" | "netWorth") => void;
 }
 
 const COLOR = "var(--investments)";
@@ -76,6 +79,8 @@ export function ScenarioPreviewChart({
   currency,
   isBalanceHidden,
   isLoading,
+  kind,
+  onKindChange,
 }: Props) {
   const { t } = useTranslation();
   const { formatDate } = useDateFormatting();
@@ -88,7 +93,27 @@ export function ScenarioPreviewChart({
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <CardTitle className="text-base">{t("scenarios:chart.title")}</CardTitle>
-          <CardDescription>{t("scenarios:chart.description")}</CardDescription>
+          <CardDescription>
+            {kind === "netWorth"
+              ? t("scenarios:chart.description_net_worth")
+              : t("scenarios:chart.description")}
+          </CardDescription>
+          <div className="flex gap-1 pt-1">
+            {(["accounts", "netWorth"] as const).map((option) => (
+              <Button
+                key={option}
+                size="sm"
+                variant={kind === option ? "secondary" : "ghost"}
+                className="h-7 rounded-full px-3 text-xs"
+                onClick={() => onKindChange(option)}
+                aria-pressed={kind === option}
+              >
+                {option === "netWorth"
+                  ? t("scenarios:chart.kind_net_worth")
+                  : t("scenarios:chart.kind_accounts")}
+              </Button>
+            ))}
+          </div>
         </div>
         <div className="flex flex-wrap gap-6 text-sm">
           {deviation && deviation.ratio !== null && (

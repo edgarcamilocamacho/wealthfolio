@@ -79,7 +79,16 @@
     "interest_tax": "利息扣繳稅",
     "outflow_tax": "提款稅",
     "fx_title": "匯率",
-    "fx_description": "每種貨幣相對 {{currency}} 的年變化。負數表示貶值。"
+    "fx_description": "每種貨幣相對 {{currency}} 的年變化。負數表示貶值。",
+    "assets_title": "房產和其他資產",
+    "assets_description": "每項另類資產的價值如何變化。預售屋可以按已付金額計價，並從交屋日起開始增值。",
+    "model_appreciation": "年增值",
+    "appreciation": "每年增值",
+    "growth_from": "開始增值日期（選填）",
+    "suggest": "使用歷史",
+    "suggest_hint": "根據此帳戶過去 12 個月的利息和稅費填寫利率和扣繳稅。",
+    "suggest_none": "{{account}} 在過去 12 個月沒有可測算的利息。",
+    "suggest_done": "已根據 {{account}} 的 {{count}} 筆利息計算利率。儲存後生效。"
   },
   "chart": {
     "title": "推估",
@@ -89,7 +98,10 @@
     "difference": "差額",
     "real_vs_projected": "{{date}} 實際與推估比較",
     "projected_at": "{{date}} 的推估",
-    "empty": "目前沒有可推估的內容。"
+    "empty": "目前沒有可推估的內容。",
+    "description_net_worth": "實際淨資產（實線）與推估（點線），含房產和負債，以基準貨幣顯示。",
+    "kind_accounts": "帳戶",
+    "kind_net_worth": "淨資產"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "某筆計畫交易使用了已不存在的帳戶（{{account}}）。",

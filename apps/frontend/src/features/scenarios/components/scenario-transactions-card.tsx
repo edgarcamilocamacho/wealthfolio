@@ -17,12 +17,15 @@ import {
   isBeforeAnchor,
   type ScenarioSeriesGroup,
 } from "../lib/scenario-transactions";
+import type { ScenarioPosition } from "../lib/scenario-positions";
 import type { ScenarioTransactionTarget } from "./scenario-transaction-dialog";
 
 interface Props {
   scenario: Scenario;
   transactions: ScenarioTransaction[];
   accounts: Account[];
+  /** Alternative assets that transfers can pay into. */
+  assets?: ScenarioPosition[];
   isBalanceHidden: boolean;
   isSaving: boolean;
   onEdit: (target: ScenarioTransactionTarget) => void;
@@ -61,6 +64,7 @@ export function ScenarioTransactionsCard({
   scenario,
   transactions,
   accounts,
+  assets = [],
   isBalanceHidden,
   isSaving,
   onEdit,
@@ -70,8 +74,11 @@ export function ScenarioTransactionsCard({
   const { formatDate } = useDateFormatting();
   const grouped = useMemo(() => groupScenarioTransactions(transactions), [transactions]);
   const accountsById = useMemo(
-    () => new Map(accounts.map((account) => [account.id, account])),
-    [accounts],
+    () =>
+      new Map<string, ScenarioPosition>(
+        [...accounts, ...assets].map((position) => [position.id, position]),
+      ),
+    [accounts, assets],
   );
 
   const accountName = (id: string | null | undefined) =>

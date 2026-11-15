@@ -444,6 +444,8 @@ pub fn run() {
             commands::scenario::get_scenario_transactions,
             commands::scenario::save_scenario_transactions,
             commands::scenario::get_scenario_projection,
+            commands::scenario::get_scenario_net_worth_projection,
+            commands::scenario::suggest_scenario_account_growth,
             commands::cloud_backups::cloud_backup_action,
             commands::cloud_backups::cloud_backup_capture,
             commands::cloud_backups::cloud_backup_download,

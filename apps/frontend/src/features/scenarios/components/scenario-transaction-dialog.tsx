@@ -32,6 +32,7 @@ import { addMonths, format } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { parseLocalDate } from "@/lib/utils";
+import type { ScenarioPosition } from "../lib/scenario-positions";
 import { dayOfMonthOf, type ScenarioSeriesGroup } from "../lib/scenario-transactions";
 
 /** What the dialog edits: nothing (a new row), one row, or a whole series. */
@@ -45,6 +46,8 @@ interface Props {
   onClose: () => void;
   scenario: Scenario;
   accounts: Account[];
+  /** Alternative assets a transfer can pay into (e.g. a property's instalments). */
+  assets?: ScenarioPosition[];
   target: ScenarioTransactionTarget;
   isSaving: boolean;
   onSubmit: (request: SaveScenarioTransactionsRequest) => Promise<void>;
@@ -98,6 +101,7 @@ export function ScenarioTransactionDialog({
   onClose,
   scenario,
   accounts,
+  assets = [],
   target,
   isSaving,
   onSubmit,
@@ -129,9 +133,22 @@ export function ScenarioTransactionDialog({
     [accounts],
   );
 
+  const destinationItems = useMemo(
+    () => [
+      ...accountItems,
+      ...assets.map((asset) => ({
+        value: asset.id,
+        label: `${asset.name} (${asset.currency})`,
+      })),
+    ],
+    [accountItems, assets],
+  );
+
   const isTransfer = draft.kind === "TRANSFER";
   const fromAccount = accounts.find((account) => account.id === draft.accountId);
-  const toAccount = accounts.find((account) => account.id === draft.toAccountId);
+  const toAccount: ScenarioPosition | undefined =
+    accounts.find((account) => account.id === draft.toAccountId) ??
+    assets.find((asset) => asset.id === draft.toAccountId);
   const crossCurrency = Boolean(
     isTransfer && fromAccount && toAccount && fromAccount.currency !== toAccount.currency,
   );
@@ -261,7 +278,7 @@ export function ScenarioTransactionDialog({
                 <div className="space-y-2">
                   <Label>{t("scenarios:transaction.to_account")}</Label>
                   <Select
-                    items={accountItems}
+                    items={destinationItems}
                     value={draft.toAccountId}
                     onValueChange={(value) => update({ toAccountId: String(value ?? "") })}
                   >
@@ -269,7 +286,7 @@ export function ScenarioTransactionDialog({
                       <SelectValue placeholder={t("scenarios:transaction.select_account")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {accountItems.map((item) => (
+                      {destinationItems.map((item) => (
                         <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>

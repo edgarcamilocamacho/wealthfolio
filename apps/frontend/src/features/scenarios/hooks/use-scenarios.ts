@@ -3,6 +3,7 @@ import {
   deleteScenario,
   duplicateScenario,
   getScenario,
+  getScenarioNetWorthProjection,
   getScenarioProjection,
   getScenarios,
   getScenarioTransactions,
@@ -59,6 +60,24 @@ export function useScenarioProjection(
       range?.endDate ?? null,
     ],
     queryFn: () => getScenarioProjection(id ?? "", filter, range?.startDate, range?.endDate),
+    enabled: Boolean(id),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useScenarioNetWorthProjection(
+  id: string | undefined,
+  range?: { startDate?: string; endDate?: string },
+) {
+  return useQuery<ScenarioProjection, Error>({
+    queryKey: [
+      QueryKeys.SCENARIO_PROJECTION,
+      "net-worth",
+      id ?? "",
+      range?.startDate ?? null,
+      range?.endDate ?? null,
+    ],
+    queryFn: () => getScenarioNetWorthProjection(id ?? "", range?.startDate, range?.endDate),
     enabled: Boolean(id),
     placeholderData: keepPreviousData,
   });

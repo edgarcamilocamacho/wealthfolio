@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use chrono::NaiveDate;
 
 use super::scenarios_model::{
-    NewScenarioTransaction, SaveScenarioTransactionsRequest, Scenario, ScenarioInput,
-    ScenarioProjection, ScenarioTransaction, ScenarioTransactionUpdate,
+    AccountGrowthSuggestion, NewScenarioTransaction, SaveScenarioTransactionsRequest, Scenario,
+    ScenarioInput, ScenarioProjection, ScenarioTransaction, ScenarioTransactionUpdate,
 };
 use crate::errors::Result;
 use crate::portfolios::AccountScope;
@@ -71,4 +71,20 @@ pub trait ScenarioServiceTrait: Send + Sync {
         start_date: Option<NaiveDate>,
         end_date: Option<NaiveDate>,
     ) -> Result<ScenarioProjection>;
+
+    /// Projects net worth from the scenario's anchor: every net-worth account
+    /// plus every alternative asset, with liabilities negative and loans
+    /// following their amortization schedule. Values are in base currency.
+    async fn get_net_worth_projection(
+        &self,
+        scenario_id: &str,
+        base_currency: &str,
+        start_date: Option<NaiveDate>,
+        end_date: Option<NaiveDate>,
+    ) -> Result<ScenarioProjection>;
+
+    /// Infers an account's effective annual rate and interest withholding from
+    /// its INTEREST and TAX activities over the last year. None when the
+    /// account earned no interest or has too little history.
+    fn suggest_account_growth(&self, account_id: &str) -> Result<Option<AccountGrowthSuggestion>>;
 }

@@ -79,7 +79,16 @@
     "interest_tax": "利息の源泉徴収税",
     "outflow_tax": "出金にかかる税",
     "fx_title": "為替レート",
-    "fx_description": "{{currency}} に対する各通貨の年間変化率。マイナスは価値の下落を意味します。"
+    "fx_description": "{{currency}} に対する各通貨の年間変化率。マイナスは価値の下落を意味します。",
+    "assets_title": "不動産とその他の資産",
+    "assets_description": "各オルタナティブ資産の価値の変化。建設中の物件は支払額のままにして、引き渡し日から値上がりさせることができます。",
+    "model_appreciation": "年間値上がり",
+    "appreciation": "年間値上がり率",
+    "growth_from": "値上がり開始日（任意）",
+    "suggest": "履歴を使う",
+    "suggest_hint": "この口座の過去12か月の利息と税金から利率と源泉徴収率を入力します。",
+    "suggest_none": "{{account}} には過去12か月に測定できる利息がありません。",
+    "suggest_done": "{{account}} の利息 {{count}} 件から利率を計算しました。保存すると反映されます。"
   },
   "chart": {
     "title": "予測",
@@ -89,7 +98,10 @@
     "difference": "差額",
     "real_vs_projected": "{{date}} の実績と予測",
     "projected_at": "{{date}} の予測",
-    "empty": "予測するものがまだありません。"
+    "empty": "予測するものがまだありません。",
+    "description_net_worth": "実際の純資産（実線）と予測（点線）を、不動産と負債を含めて基準通貨で表示します。",
+    "kind_accounts": "口座",
+    "kind_net_worth": "純資産"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "予定の取引が存在しない口座（{{account}}）を使っています。",

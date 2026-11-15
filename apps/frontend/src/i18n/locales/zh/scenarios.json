@@ -79,7 +79,16 @@
     "interest_tax": "利息预扣税",
     "outflow_tax": "取款税",
     "fx_title": "汇率",
-    "fx_description": "每种货币相对 {{currency}} 的年变化。负数表示贬值。"
+    "fx_description": "每种货币相对 {{currency}} 的年变化。负数表示贬值。",
+    "assets_title": "房产和其他资产",
+    "assets_description": "每项另类资产的价值如何变化。期房可以按已付金额计价，并从交付日起开始升值。",
+    "model_appreciation": "年升值",
+    "appreciation": "每年升值",
+    "growth_from": "开始升值日期（可选）",
+    "suggest": "使用历史",
+    "suggest_hint": "根据此账户过去 12 个月的利息和税费填写利率和预扣税。",
+    "suggest_none": "{{account}} 在过去 12 个月没有可测算的利息。",
+    "suggest_done": "已根据 {{account}} 的 {{count}} 笔利息计算利率。保存后生效。"
   },
   "chart": {
     "title": "预测",
@@ -89,7 +98,10 @@
     "difference": "差额",
     "real_vs_projected": "{{date}} 实际与预测对比",
     "projected_at": "{{date}} 的预测",
-    "empty": "暂无可预测的内容。"
+    "empty": "暂无可预测的内容。",
+    "description_net_worth": "实际净资产（实线）与预测（点线），含房产和负债，以基准货币显示。",
+    "kind_accounts": "账户",
+    "kind_net_worth": "净资产"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "某笔计划交易使用了已不存在的账户（{{account}}）。",

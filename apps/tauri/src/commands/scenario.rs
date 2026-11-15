@@ -1,8 +1,8 @@
 use log::debug;
 use wealthfolio_core::portfolios::AccountScope;
 use wealthfolio_core::scenarios::{
-    SaveScenarioTransactionsRequest, Scenario, ScenarioInput, ScenarioProjection,
-    ScenarioTransaction,
+    AccountGrowthSuggestion, SaveScenarioTransactionsRequest, Scenario, ScenarioInput,
+    ScenarioProjection, ScenarioTransaction,
 };
 
 use super::portfolio::AccountScopeInput;
@@ -141,4 +141,34 @@ pub async fn get_scenario_projection(
         .get_scenario_projection(&scenario_id, &scope, &base_currency, start, end)
         .await
         .map_err(|e| format!("Failed to project scenario: {e}"))
+}
+
+#[tauri::command]
+pub async fn get_scenario_net_worth_projection(
+    scenario_id: String,
+    start_date: Option<String>,
+    end_date: Option<String>,
+    state: ProfileAccess,
+) -> Result<ScenarioProjection, String> {
+    let context = state.context()?;
+    let start = parse_optional_date(start_date, "start date")?;
+    let end = parse_optional_date(end_date, "end date")?;
+    let base_currency = context.get_base_currency();
+    context
+        .scenario_service()
+        .get_net_worth_projection(&scenario_id, &base_currency, start, end)
+        .await
+        .map_err(|e| format!("Failed to project net worth: {e}"))
+}
+
+#[tauri::command]
+pub async fn suggest_scenario_account_growth(
+    account_id: String,
+    state: ProfileAccess,
+) -> Result<Option<AccountGrowthSuggestion>, String> {
+    let context = state.context()?;
+    context
+        .scenario_service()
+        .suggest_account_growth(&account_id)
+        .map_err(|e| format!("Failed to suggest a growth rate: {e}"))
 }

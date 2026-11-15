@@ -328,6 +328,7 @@ mod tests {
                 annual_rate: 0.08,
                 interest_tax_rate: 0.0,
                 outflow_tax_rate: 0.0,
+                growth_from: None,
             },
         );
         assumptions.fx.insert("COP".to_string(), -0.04);

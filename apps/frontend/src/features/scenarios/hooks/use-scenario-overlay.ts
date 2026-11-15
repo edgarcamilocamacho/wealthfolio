@@ -6,13 +6,20 @@ import {
   type HistoryProjectionPoint,
   type ScenarioFutureWindow,
 } from "../lib/scenario-overlay";
-import { useScenarioProjection, useScenarios } from "./use-scenarios";
+import {
+  useScenarioNetWorthProjection,
+  useScenarioProjection,
+  useScenarios,
+} from "./use-scenarios";
 
 const ACTIVE_SCENARIO_KEY = "scenario-overlay:active";
 const FUTURE_WINDOW_KEY = "scenario-overlay:window";
 
 interface Options {
+  /** The accounts the chart shows. Ignored for the net-worth chart. */
   scope: AccountScope;
+  /** Project net worth (accounts, alternative assets and liabilities). */
+  netWorth?: boolean;
   /** Left edge of the chart (YYYY-MM-DD); undefined for all time. */
   startDate?: string;
   todayISO: string;
@@ -22,7 +29,7 @@ interface Options {
  * The scenario drawn over history charts. The choice is a per-device UI
  * preference shared by every chart that offers it.
  */
-export function useScenarioOverlay({ scope, startDate, todayISO }: Options) {
+export function useScenarioOverlay({ scope, netWorth = false, startDate, todayISO }: Options) {
   const [activeScenarioId, setActiveScenarioId] = usePersistentState<string | null>(
     ACTIVE_SCENARIO_KEY,
     null,
@@ -36,10 +43,17 @@ export function useScenarioOverlay({ scope, startDate, todayISO }: Options) {
   const endDate = activeScenario
     ? overlayEndDate(todayISO, activeScenario.endDate, futureWindow)
     : undefined;
-  const { data: projection, isLoading } = useScenarioProjection(activeScenario?.id, scope, {
-    startDate,
-    endDate,
-  });
+  const range = { startDate, endDate };
+  const scopeProjection = useScenarioProjection(
+    netWorth ? undefined : activeScenario?.id,
+    scope,
+    range,
+  );
+  const netWorthProjection = useScenarioNetWorthProjection(
+    netWorth ? activeScenario?.id : undefined,
+    range,
+  );
+  const { data: projection, isLoading } = netWorth ? netWorthProjection : scopeProjection;
 
   const points = useMemo<HistoryProjectionPoint[] | undefined>(
     () =>

@@ -12,6 +12,9 @@
 //!   `rate(anchor) × (1 + drift)^(i / 365)`.
 //! - Transactions on or before the anchor, or after the end, have no effect.
 //!   A side naming an unknown account is skipped; the other side still applies.
+//! - A position with a schedule (a loan's amortization) takes the scheduled
+//!   balance on each scheduled day after the anchor, after growth and
+//!   transactions.
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -28,6 +31,8 @@ pub struct EngineAccount {
     /// Balance on the anchor date, in `currency`.
     pub start_value: f64,
     pub model: AccountGrowthModel,
+    /// Balances the position takes on given days, in date order.
+    pub schedule: Vec<(NaiveDate, f64)>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,6 +95,7 @@ struct Growth {
     daily_rate: f64,
     interest_tax_rate: f64,
     outflow_tax_rate: f64,
+    from: Option<NaiveDate>,
 }
 
 fn growth_of(model: &AccountGrowthModel) -> Growth {
@@ -98,15 +104,20 @@ fn growth_of(model: &AccountGrowthModel) -> Growth {
             daily_rate: 0.0,
             interest_tax_rate: 0.0,
             outflow_tax_rate: 0.0,
+            from: None,
         },
         AccountGrowthModel::Rate {
             annual_rate,
             interest_tax_rate,
             outflow_tax_rate,
+            growth_from,
         } => Growth {
             daily_rate: (1.0 + annual_rate).powf(1.0 / DAYS_PER_YEAR) - 1.0,
             interest_tax_rate: *interest_tax_rate,
             outflow_tax_rate: *outflow_tax_rate,
+            from: growth_from
+                .as_deref()
+                .and_then(|date| NaiveDate::parse_from_str(date, "%Y-%m-%d").ok()),
         },
     }
 }
@@ -147,6 +158,7 @@ pub fn project(input: &EngineInput<'_>) -> EngineOutput {
         })
         .collect();
     let mut first_negative: BTreeMap<String, NaiveDate> = BTreeMap::new();
+    let mut schedule_cursor: Vec<usize> = vec![0; input.accounts.len()];
 
     let mut transactions: Vec<&EngineTransaction> = input
         .transactions
@@ -158,7 +170,8 @@ pub fn project(input: &EngineInput<'_>) -> EngineOutput {
 
     for (day, date) in dates.iter().enumerate().skip(1) {
         for (balance, account_growth) in current.iter_mut().zip(&growth) {
-            if account_growth.daily_rate != 0.0 && *balance > 0.0 {
+            let started = account_growth.from.is_none_or(|from| *date >= from);
+            if started && account_growth.daily_rate != 0.0 && *balance > 0.0 {
                 let interest = *balance * account_growth.daily_rate;
                 *balance += interest * (1.0 - account_growth.interest_tax_rate);
             }
@@ -196,6 +209,16 @@ pub fn project(input: &EngineInput<'_>) -> EngineOutput {
                         }
                     }
                 }
+            }
+        }
+
+        for (index, account) in input.accounts.iter().enumerate() {
+            let cursor = &mut schedule_cursor[index];
+            while *cursor < account.schedule.len() && account.schedule[*cursor].0 <= *date {
+                if account.schedule[*cursor].0 > input.anchor {
+                    current[index] = account.schedule[*cursor].1;
+                }
+                *cursor += 1;
             }
         }
 
@@ -268,6 +291,7 @@ mod tests {
             currency: currency.to_string(),
             start_value,
             model,
+            schedule: Vec::new(),
         }
     }
 
@@ -276,6 +300,7 @@ mod tests {
             annual_rate,
             interest_tax_rate,
             outflow_tax_rate,
+            growth_from: None,
         }
     }
 
@@ -611,5 +636,56 @@ mod tests {
         );
         assert_eq!(output.dates, vec![date("2026-01-10")]);
         assert_eq!(output.balances["a"], vec![5.0]);
+    }
+
+    #[test]
+    fn growth_waits_for_its_start_date() {
+        let mut model = rate(0.10, 0.0, 0.0);
+        if let AccountGrowthModel::Rate { growth_from, .. } = &mut model {
+            *growth_from = Some("2026-07-01".to_string());
+        }
+        let accounts = [account("house", "USD", 1000.0, model)];
+        let output = run(
+            "2026-01-01",
+            "2026-12-31",
+            &accounts,
+            &fx(&[("USD", 1.0)]),
+            &BTreeMap::new(),
+            &[],
+        );
+        let june_30 = output
+            .dates
+            .iter()
+            .position(|day| *day == date("2026-06-30"))
+            .expect("day in range");
+        assert_eq!(output.balances["house"][june_30], 1000.0);
+        assert!(last(&output, "house") > 1000.0);
+    }
+
+    #[test]
+    fn a_schedule_sets_the_balance_after_the_anchor() {
+        let mut loan = account("loan", "USD", -10_000.0, AccountGrowthModel::Flat);
+        loan.schedule = vec![
+            (date("2025-12-01"), -10_500.0),
+            (date("2026-02-01"), -9_800.0),
+            (date("2026-03-01"), -9_600.0),
+        ];
+        let output = run(
+            "2026-01-01",
+            "2026-03-15",
+            &[loan],
+            &fx(&[("USD", 1.0)]),
+            &BTreeMap::new(),
+            &[],
+        );
+        assert_eq!(output.balances["loan"][0], -10_000.0);
+        let jan_31 = output
+            .dates
+            .iter()
+            .position(|day| *day == date("2026-01-31"))
+            .expect("day in range");
+        assert_eq!(output.balances["loan"][jan_31], -10_000.0);
+        assert_eq!(output.balances["loan"][jan_31 + 1], -9_800.0);
+        assert_eq!(last(&output, "loan"), -9_600.0);
     }
 }

@@ -79,7 +79,16 @@
     "interest_tax": "Steuerabzug auf Zinsen",
     "outflow_tax": "Steuer auf Auszahlungen",
     "fx_title": "Wechselkurse",
-    "fx_description": "Jährliche Veränderung jeder Währung gegenüber {{currency}}. Negativ bedeutet Wertverlust."
+    "fx_description": "Jährliche Veränderung jeder Währung gegenüber {{currency}}. Negativ bedeutet Wertverlust.",
+    "assets_title": "Immobilien und andere Vermögenswerte",
+    "assets_description": "Wie sich der Wert jedes alternativen Vermögenswerts ändert. Eine Immobilie im Bau kann beim gezahlten Betrag bleiben und ab der Übergabe an Wert gewinnen.",
+    "model_appreciation": "Jährliche Wertsteigerung",
+    "appreciation": "Wertsteigerung pro Jahr",
+    "growth_from": "Wertsteigerung ab (optional)",
+    "suggest": "Verlauf nutzen",
+    "suggest_hint": "Füllt Zinssatz und Steuerabzug aus den Zinsen und Steuern dieses Kontos der letzten 12 Monate.",
+    "suggest_none": "{{account}} hat in den letzten 12 Monaten keine Zinsen zum Messen.",
+    "suggest_done": "Zinssatz aus {{count}} Zinszahlungen von {{account}} berechnet. Speichern, um ihn zu behalten."
   },
   "chart": {
     "title": "Projektion",
@@ -89,7 +98,10 @@
     "difference": "Differenz",
     "real_vs_projected": "Echt vs. projiziert am {{date}}",
     "projected_at": "Projiziert zum {{date}}",
-    "empty": "Noch nichts zu projizieren."
+    "empty": "Noch nichts zu projizieren.",
+    "description_net_worth": "Echtes Nettovermögen (durchgezogen) und die Projektion (gepunktet), mit Immobilien und Verbindlichkeiten, in Ihrer Basiswährung.",
+    "kind_accounts": "Konten",
+    "kind_net_worth": "Nettovermögen"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "Eine geplante Transaktion nutzt ein Konto, das nicht mehr existiert ({{account}}).",

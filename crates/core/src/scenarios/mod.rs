@@ -7,12 +7,14 @@ mod scenarios_model;
 mod scenarios_service;
 mod scenarios_traits;
 pub mod series;
+pub mod suggest;
 
 pub use scenarios_model::{
-    AccountGrowthModel, NewScenarioTransaction, SaveScenarioTransactionsRequest, Scenario,
-    ScenarioAssumptions, ScenarioInput, ScenarioProjection, ScenarioProjectionPoint,
-    ScenarioSeriesRule, ScenarioTransaction, ScenarioTransactionInput, ScenarioTransactionKind,
-    ScenarioTransactionUpdate, ScenarioWarning, ScenarioWarningCode,
+    AccountGrowthModel, AccountGrowthSuggestion, NewScenarioTransaction,
+    SaveScenarioTransactionsRequest, Scenario, ScenarioAssumptions, ScenarioInput,
+    ScenarioProjection, ScenarioProjectionPoint, ScenarioSeriesRule, ScenarioTransaction,
+    ScenarioTransactionInput, ScenarioTransactionKind, ScenarioTransactionUpdate, ScenarioWarning,
+    ScenarioWarningCode,
 };
-pub use scenarios_service::ScenarioService;
+pub use scenarios_service::{ScenarioService, ScenarioServiceSources};
 pub use scenarios_traits::{ScenarioRepositoryTrait, ScenarioServiceTrait};

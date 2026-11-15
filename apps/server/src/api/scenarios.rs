@@ -9,8 +9,8 @@ use axum::{
 use serde::Deserialize;
 use wealthfolio_core::portfolios::AccountScope;
 use wealthfolio_core::scenarios::{
-    SaveScenarioTransactionsRequest, Scenario, ScenarioInput, ScenarioProjection,
-    ScenarioTransaction,
+    AccountGrowthSuggestion, SaveScenarioTransactionsRequest, Scenario, ScenarioInput,
+    ScenarioProjection, ScenarioTransaction,
 };
 
 use crate::{error::ApiResult, main_lib::AppState};
@@ -129,6 +129,42 @@ async fn get_scenario_projection(
     ))
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NetWorthProjectionBody {
+    start_date: Option<String>,
+    end_date: Option<String>,
+}
+
+async fn get_scenario_net_worth_projection(
+    Path(id): Path<String>,
+    axum::Extension(state): axum::Extension<Arc<AppState>>,
+    Json(body): Json<NetWorthProjectionBody>,
+) -> ApiResult<Json<ScenarioProjection>> {
+    let start = parse_optional_date(body.start_date, "startDate")?;
+    let end = parse_optional_date(body.end_date, "endDate")?;
+    let base = state
+        .base_currency
+        .read()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone();
+    Ok(Json(
+        state
+            .scenario_service
+            .get_net_worth_projection(&id, &base, start, end)
+            .await?,
+    ))
+}
+
+async fn suggest_scenario_account_growth(
+    Path(account_id): Path<String>,
+    axum::Extension(state): axum::Extension<Arc<AppState>>,
+) -> ApiResult<Json<Option<AccountGrowthSuggestion>>> {
+    Ok(Json(
+        state.scenario_service.suggest_account_growth(&account_id)?,
+    ))
+}
+
 pub fn router<S: Clone + Send + Sync + 'static>() -> Router<S> {
     Router::new()
         .route("/scenarios", get(get_scenarios).post(create_scenario))
@@ -144,4 +180,12 @@ pub fn router<S: Clone + Send + Sync + 'static>() -> Router<S> {
             get(get_scenario_transactions).post(save_scenario_transactions),
         )
         .route("/scenarios/{id}/projection", post(get_scenario_projection))
+        .route(
+            "/scenarios/growth-suggestions/{account_id}",
+            get(suggest_scenario_account_growth),
+        )
+        .route(
+            "/scenarios/{id}/net-worth-projection",
+            post(get_scenario_net_worth_projection),
+        )
 }

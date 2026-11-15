@@ -79,7 +79,16 @@
     "interest_tax": "이자 원천징수세",
     "outflow_tax": "출금세",
     "fx_title": "환율",
-    "fx_description": "{{currency}} 대비 각 통화의 연간 변화율. 음수는 가치 하락을 뜻합니다."
+    "fx_description": "{{currency}} 대비 각 통화의 연간 변화율. 음수는 가치 하락을 뜻합니다.",
+    "assets_title": "부동산 및 기타 자산",
+    "assets_description": "각 대체 자산의 가치 변화. 분양 중인 부동산은 납입액으로 유지하다가 인도일부터 가치가 오르도록 할 수 있습니다.",
+    "model_appreciation": "연간 가치 상승",
+    "appreciation": "연간 가치 상승률",
+    "growth_from": "가치 상승 시작일 (선택)",
+    "suggest": "내역 사용",
+    "suggest_hint": "이 계좌의 최근 12개월 이자와 세금으로 이율과 원천징수율을 채웁니다.",
+    "suggest_none": "{{account}}에는 최근 12개월 동안 측정할 이자가 없습니다.",
+    "suggest_done": "{{account}}의 이자 {{count}}건으로 이율을 계산했습니다. 저장하면 유지됩니다."
   },
   "chart": {
     "title": "예측",
@@ -89,7 +98,10 @@
     "difference": "차이",
     "real_vs_projected": "{{date}} 실제 대비 예측",
     "projected_at": "{{date}} 예측",
-    "empty": "아직 예측할 내용이 없습니다."
+    "empty": "아직 예측할 내용이 없습니다.",
+    "description_net_worth": "실제 순자산(실선)과 예측(점선)을 부동산과 부채를 포함해 기준 통화로 보여줍니다.",
+    "kind_accounts": "계좌",
+    "kind_net_worth": "순자산"
   },
   "warnings": {
     "UNKNOWN_ACCOUNT": "계획된 거래가 더 이상 존재하지 않는 계좌({{account}})를 사용합니다.",

@@ -1,6 +1,7 @@
 // Scenario Commands
 import type {
   AccountScope,
+  ScenarioGrowthSuggestion,
   SaveScenarioTransactionsRequest,
   Scenario,
   ScenarioInput,
@@ -59,4 +60,22 @@ export const getScenarioProjection = async (
     startDate,
     endDate,
   });
+};
+
+export const getScenarioNetWorthProjection = async (
+  scenarioId: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<ScenarioProjection> => {
+  return invoke<ScenarioProjection>("get_scenario_net_worth_projection", {
+    scenarioId,
+    startDate,
+    endDate,
+  });
+};
+
+export const suggestScenarioAccountGrowth = async (
+  accountId: string,
+): Promise<ScenarioGrowthSuggestion | null> => {
+  return invoke<ScenarioGrowthSuggestion | null>("suggest_scenario_account_growth", { accountId });
 };

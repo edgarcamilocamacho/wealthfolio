@@ -1,5 +1,6 @@
 import { formatZonedDateKey } from "@/features/spending/lib/timezone";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useAlternativeHoldings, useNetWorthHistory } from "@/hooks/use-alternative-assets";
 import { useBalancePrivacy } from "@/hooks/use-balance-privacy";
 import { useValuationHistory } from "@/hooks/use-valuation-history";
 import { AccountPurpose } from "@/lib/constants";
@@ -43,9 +44,11 @@ import { ScenarioTransactionsCard } from "../components/scenario-transactions-ca
 import {
   useScenario,
   useScenarioMutations,
+  useScenarioNetWorthProjection,
   useScenarioProjection,
   useScenarioTransactions,
 } from "../hooks/use-scenarios";
+import type { ScenarioPosition } from "../lib/scenario-positions";
 
 const ALL_ACCOUNTS = { type: "all" } as const;
 
@@ -63,10 +66,23 @@ export default function ScenarioDetailPage() {
   const { data: scenario, isLoading, error } = useScenario(scenarioId);
   const { data: transactions = [] } = useScenarioTransactions(scenarioId);
   const { accounts } = useAccounts({ accountPurpose: AccountPurpose.HOLDINGS });
-  const { data: projection, isLoading: isProjectionLoading } = useScenarioProjection(
-    scenarioId,
-    ALL_ACCOUNTS,
+  const { data: alternativeHoldings } = useAlternativeHoldings();
+  const assets = useMemo<ScenarioPosition[]>(
+    () =>
+      (alternativeHoldings ?? [])
+        .filter((holding) => holding.kind.toLowerCase() !== "liability")
+        .map((holding) => ({ id: holding.id, name: holding.name, currency: holding.currency })),
+    [alternativeHoldings],
   );
+  const [previewKind, setPreviewKind] = useState<"accounts" | "netWorth">("accounts");
+  const isNetWorthPreview = previewKind === "netWorth";
+  const accountsProjection = useScenarioProjection(scenarioId, ALL_ACCOUNTS);
+  const netWorthProjection = useScenarioNetWorthProjection(
+    isNetWorthPreview ? scenarioId : undefined,
+  );
+  const { data: projection, isLoading: isProjectionLoading } = isNetWorthPreview
+    ? netWorthProjection
+    : accountsProjection;
   const historyRange = useMemo(
     () =>
       scenario
@@ -74,11 +90,17 @@ export default function ScenarioDetailPage() {
         : undefined,
     [scenario, todayISO],
   );
-  const { valuationHistory, isLoading: isHistoryLoading } = useValuationHistory(
+  const { valuationHistory, isLoading: isValuationLoading } = useValuationHistory(
     historyRange,
     ALL_ACCOUNTS,
-    { enabled: Boolean(scenario) },
+    { enabled: Boolean(scenario) && !isNetWorthPreview },
   );
+  const { data: netWorthHistory, isLoading: isNetWorthLoading } = useNetWorthHistory({
+    startDate: scenario?.anchorDate ?? "",
+    endDate: todayISO,
+    enabled: Boolean(scenario) && isNetWorthPreview,
+  });
+  const isHistoryLoading = isNetWorthPreview ? isNetWorthLoading : isValuationLoading;
 
   const { updateMutation, deleteMutation, duplicateMutation, saveTransactionsMutation } =
     useScenarioMutations();
@@ -90,18 +112,23 @@ export default function ScenarioDetailPage() {
 
   const real = useMemo(
     () =>
-      (valuationHistory ?? [])
-        .filter((row) => row.valueStatus !== "unavailable")
-        .map((row) => ({ date: row.valuationDate.slice(0, 10), value: row.totalValueBase })),
-    [valuationHistory],
+      isNetWorthPreview
+        ? (netWorthHistory ?? []).map((point) => ({
+            date: point.date.slice(0, 10),
+            value: point.netWorth,
+          }))
+        : (valuationHistory ?? [])
+            .filter((row) => row.valueStatus !== "unavailable")
+            .map((row) => ({ date: row.valuationDate.slice(0, 10), value: row.totalValueBase })),
+    [isNetWorthPreview, netWorthHistory, valuationHistory],
   );
   const projected = useMemo(
     () => (projection?.points ?? []).map((point) => ({ date: point.date, value: point.value })),
     [projection],
   );
   const accountNames = useMemo(
-    () => new Map(accounts.map((account) => [account.id, account.name])),
-    [accounts],
+    () => new Map([...accounts, ...assets].map((position) => [position.id, position.name])),
+    [accounts, assets],
   );
 
   if (isLoading) {
@@ -229,12 +256,15 @@ export default function ScenarioDetailPage() {
           currency={projection?.currency ?? baseCurrency}
           isBalanceHidden={isBalanceHidden}
           isLoading={isProjectionLoading || isHistoryLoading}
+          kind={previewKind}
+          onKindChange={setPreviewKind}
         />
 
         <ScenarioTransactionsCard
           scenario={scenario}
           transactions={transactions}
           accounts={accounts}
+          assets={assets}
           isBalanceHidden={isBalanceHidden}
           isSaving={saveTransactionsMutation.isPending}
           onEdit={setTransactionTarget}
@@ -244,6 +274,7 @@ export default function ScenarioDetailPage() {
         <ScenarioAssumptionsCard
           scenario={scenario}
           accounts={accounts}
+          assets={assets}
           baseCurrency={baseCurrency}
           isSaving={updateMutation.isPending}
           onSave={handleSaveAssumptions}
@@ -264,6 +295,7 @@ export default function ScenarioDetailPage() {
           onClose={() => setTransactionTarget(null)}
           scenario={scenario}
           accounts={accounts}
+          assets={assets}
           target={transactionTarget}
           isSaving={saveTransactionsMutation.isPending}
           onSubmit={handleSaveTransactions}

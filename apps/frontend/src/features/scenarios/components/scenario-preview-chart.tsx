@@ -12,6 +12,7 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import {
   latestDeviation,
   mergeRealAndProjected,
+  timeAxisTicks,
   type ScenarioChartPoint,
 } from "../lib/scenario-transactions";
 
@@ -85,6 +86,10 @@ export function ScenarioPreviewChart({
   const { t } = useTranslation();
   const { formatDate } = useDateFormatting();
   const points = useMemo(() => mergeRealAndProjected(real, projected), [real, projected]);
+  const ticks = useMemo(
+    () => (points.length > 0 ? timeAxisTicks(points[0].time, points[points.length - 1].time) : []),
+    [points],
+  );
   const deviation = useMemo(() => latestDeviation(points), [points]);
   const lastProjected = projected[projected.length - 1];
 
@@ -154,6 +159,7 @@ export function ScenarioPreviewChart({
                   type="number"
                   scale="time"
                   domain={["dataMin", "dataMax"]}
+                  ticks={ticks}
                   tickFormatter={(time: number) =>
                     formatDate(new Date(time).toISOString().slice(0, 10))
                   }

@@ -6,6 +6,7 @@ import {
   isBeforeAnchor,
   latestDeviation,
   mergeRealAndProjected,
+  timeAxisTicks,
 } from "./scenario-transactions";
 
 function row(
@@ -92,5 +93,47 @@ describe("mergeRealAndProjected", () => {
     expect(
       latestDeviation(mergeRealAndProjected([], [{ date: "2026-01-01", value: 1 }])),
     ).toBeNull();
+  });
+});
+
+describe("timeAxisTicks", () => {
+  const day = (date: string) => Date.parse(`${date}T00:00:00Z`);
+  const iso = (ticks: number[]) => ticks.map((time) => new Date(time).toISOString().slice(0, 10));
+
+  it("puts a 20-year axis on round years", () => {
+    expect(iso(timeAxisTicks(day("2026-11-16"), day("2046-12-31")))).toEqual([
+      "2030-01-01",
+      "2035-01-01",
+      "2040-01-01",
+      "2045-01-01",
+    ]);
+  });
+
+  it("uses months on a short axis and never passes the limit", () => {
+    expect(iso(timeAxisTicks(day("2026-11-16"), day("2027-03-10")))).toEqual([
+      "2026-12-01",
+      "2027-01-01",
+      "2027-02-01",
+      "2027-03-01",
+    ]);
+    for (const end of ["2027-11-16", "2030-12-31", "2046-12-31", "2126-12-31", "2526-12-31"]) {
+      expect(timeAxisTicks(day("2026-11-16"), day(end)).length).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it("keeps a start that falls on the first of a month", () => {
+    expect(iso(timeAxisTicks(day("2027-01-01"), day("2027-03-01")))).toEqual([
+      "2027-01-01",
+      "2027-02-01",
+      "2027-03-01",
+    ]);
+  });
+
+  it("falls back to the ends when no month starts in between", () => {
+    expect(timeAxisTicks(day("2026-11-16"), day("2026-11-20"))).toEqual([
+      day("2026-11-16"),
+      day("2026-11-20"),
+    ]);
+    expect(timeAxisTicks(day("2026-11-16"), day("2026-11-16"))).toEqual([day("2026-11-16")]);
   });
 });

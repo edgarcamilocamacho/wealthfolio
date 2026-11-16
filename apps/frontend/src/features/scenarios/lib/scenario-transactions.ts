@@ -86,6 +86,39 @@ export function mergeRealAndProjected(
   return [...byDate.values()].sort((a, b) => a.time - b.time);
 }
 
+/** Month steps tried for axis ticks, smallest first. */
+const TICK_MONTH_STEPS = [1, 2, 3, 6, 12, 24, 60, 120];
+
+/**
+ * At most `maxTicks` first-of-month times (midnight UTC) between two times,
+ * on a round step of months, so yearly ticks fall on January. Recharts measures
+ * every tick label in the DOM, so a long daily axis needs ticks of its own.
+ */
+export function timeAxisTicks(startTime: number, endTime: number, maxTicks = 6): number[] {
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) return [];
+  if (endTime <= startTime) return [startTime];
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const firstMonth =
+    start.getUTCFullYear() * 12 + start.getUTCMonth() + (startTime === firstOfMonth(start) ? 0 : 1);
+  const lastMonth = end.getUTCFullYear() * 12 + end.getUTCMonth();
+  const span = lastMonth - firstMonth + 1;
+  const largest = TICK_MONTH_STEPS[TICK_MONTH_STEPS.length - 1];
+  const steps = [...TICK_MONTH_STEPS, Math.max(largest, Math.ceil(span / maxTicks / 12) * 12)];
+  for (const step of steps) {
+    const ticks: number[] = [];
+    for (let month = Math.ceil(firstMonth / step) * step; month <= lastMonth; month += step) {
+      ticks.push(Date.UTC(Math.floor(month / 12), month % 12, 1));
+    }
+    if (ticks.length <= maxTicks) return ticks.length > 0 ? ticks : [startTime, endTime];
+  }
+  return [startTime, endTime];
+}
+
+function firstOfMonth(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1);
+}
+
 /** Relative gap between real and projected on the latest day that has both. */
 export function latestDeviation(points: ScenarioChartPoint[]): {
   date: string;

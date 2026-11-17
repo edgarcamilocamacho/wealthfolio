@@ -65,8 +65,10 @@ per-currency FX assumptions, and a list of hypothetical transactions.
 
 **Anchor.** The day the projection starts. Each account starts from its real
 `total_value` on that day, read from the daily valuation history
-(`DailyAccountValuation`). The anchor can be edited at any time, but never set
-after today. When it moves:
+(`DailyAccountValuation`). An account with no activity on or before the anchor
+has no valuation and starts at zero, which is its real balance; only an account
+that had activity but lacks a valuation raises a warning. The anchor can be
+edited at any time, but never set after today. When it moves:
 
 - the starting balances are read again for the new date;
 - transactions dated on or before the anchor are ignored (the editor greys them

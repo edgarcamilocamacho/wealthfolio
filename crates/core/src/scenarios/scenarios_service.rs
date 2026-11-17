@@ -32,7 +32,9 @@ use crate::fx::FxServiceTrait;
 use crate::portfolio::valuation::{ValuationServiceTrait, ValuationStatus};
 use crate::portfolios::{AccountScope, PortfolioServiceTrait};
 use crate::quotes::QuoteServiceTrait;
-use crate::utils::time_utils::{parse_user_timezone_or_default, user_today};
+use crate::utils::time_utils::{
+    parse_user_timezone_or_default, user_today, valuation_date_from_utc,
+};
 
 const MAX_NAME_CHARS: usize = 100;
 const MAX_DESCRIPTION_CHARS: usize = 1000;
@@ -210,6 +212,22 @@ pub(crate) fn validate_transaction_input(
 pub(crate) struct AnchorValue {
     pub value: f64,
     pub fx_rate_to_base: Option<f64>,
+}
+
+/// The anchor value of an account with no valuation: one whose first activity
+/// comes after the anchor, or that has none, really holds nothing then, so it
+/// starts at zero without a warning. Any other gap stays a warning.
+pub(crate) fn empty_account_anchor(
+    first_activity_day: Option<NaiveDate>,
+    anchor: NaiveDate,
+) -> Option<AnchorValue> {
+    match first_activity_day {
+        Some(day) if day <= anchor => None,
+        _ => Some(AnchorValue {
+            value: 0.0,
+            fx_rate_to_base: None,
+        }),
+    }
 }
 
 /// Everything the projection needs, already loaded.
@@ -444,13 +462,26 @@ impl ScenarioService {
         }
     }
 
-    fn today(&self) -> NaiveDate {
-        user_today(parse_user_timezone_or_default(
+    fn timezone(&self) -> chrono_tz::Tz {
+        parse_user_timezone_or_default(
             &self
                 .timezone
                 .read()
                 .unwrap_or_else(|poisoned| poisoned.into_inner()),
-        ))
+        )
+    }
+
+    fn today(&self) -> NaiveDate {
+        user_today(self.timezone())
+    }
+
+    /// The day, in the user's timezone, of an account's first activity.
+    fn first_activity_day(&self, account_id: &str) -> Result<Option<NaiveDate>> {
+        let first = self
+            .activity_repository
+            .get_first_activity_date(Some(std::slice::from_ref(&account_id.to_string())))?;
+        let tz = self.timezone();
+        Ok(first.map(|instant| valuation_date_from_utc(instant, tz)))
     }
 
     fn ensure_accounts_exist(&self, account_ids: BTreeSet<String>) -> Result<()> {
@@ -861,7 +892,11 @@ impl ScenarioService {
         let mut fx_at_anchor: HashMap<String, f64> = HashMap::new();
         fx_at_anchor.insert(base_currency.to_string(), 1.0);
         for account in &accounts {
-            if let Some(anchor_value) = self.anchor_value(&account.id, anchor)? {
+            let anchor_value = match self.anchor_value(&account.id, anchor)? {
+                Some(anchor_value) => Some(anchor_value),
+                None => empty_account_anchor(self.first_activity_day(&account.id)?, anchor),
+            };
+            if let Some(anchor_value) = anchor_value {
                 if let Some(rate) = anchor_value.fx_rate_to_base {
                     fx_at_anchor.entry(account.currency.clone()).or_insert(rate);
                 }
@@ -1201,6 +1236,31 @@ mod tests {
         // The AED account has no rate, so it is left out of base totals.
         assert_eq!(projection.points[0].value_base, 0.0);
         assert_eq!(projection.points.last().map(|p| p.value_base), Some(-10.0));
+    }
+
+    #[test]
+    fn an_account_with_no_activity_by_the_anchor_starts_empty() {
+        let anchor = date("2026-01-01");
+        let empty = Some(AnchorValue {
+            value: 0.0,
+            fx_rate_to_base: None,
+        });
+        assert_eq!(empty_account_anchor(None, anchor), empty);
+        assert_eq!(
+            empty_account_anchor(Some(date("2026-01-02")), anchor),
+            empty
+        );
+        assert_eq!(empty_account_anchor(Some(anchor), anchor), None);
+        assert_eq!(empty_account_anchor(Some(date("2025-06-01")), anchor), None);
+
+        let mut fixture = Fixture::new();
+        fixture.anchors.insert(
+            "usd".to_string(),
+            empty_account_anchor(None, anchor).expect("empty anchor"),
+        );
+        let projection = fixture.project(&["aed", "usd"], false, (None, None));
+        assert!(projection.warnings.is_empty());
+        assert_eq!(projection.points[0].value_base, 10_000.0);
     }
 
     #[test]
